@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import client from '../api/client';
 
 const LinkManager = () => {
@@ -13,6 +15,17 @@ const LinkManager = () => {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // id being edited
   const [editForm, setEditForm] = useState({ title: '', url: '', description: '' });
+
+  const redirectOrigin = useMemo(() => {
+    const base = client.defaults?.baseURL || '';
+    try {
+      const parsed = new URL(base);
+      return parsed.origin; // baseURL is .../api; origin gives protocol+host
+    } catch {
+      const origin = window.location.origin || '';
+      return origin.replace(':3000', ':8080');
+    }
+  }, []);
 
   const canCreate = useMemo(() => {
     return form.title.trim() && /^https?:\/\//i.test(form.url.trim());
@@ -54,6 +67,17 @@ const LinkManager = () => {
     await load();
   };
 
+  const toggleActive = async (link) => {
+    const payload = {
+      title: link.title || '',
+      url: link.url || '',
+      description: link.description || '',
+      isActive: !link.isActive,
+    };
+    await client.put(`/links/${link.id}`, payload);
+    await load();
+  };
+
   const move = async (index, delta) => {
     const target = index + delta;
     if (target < 0 || target >= links.length) return;
@@ -63,6 +87,27 @@ const LinkManager = () => {
     setLinks(reordered);
     await client.put('/links/reorder', reordered.map(l => l.id));
     await load();
+  };
+
+  const shortUrlFor = (id) => `${redirectOrigin}/r/${id}`;
+
+  const copyShort = async (id) => {
+    const url = shortUrlFor(id);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+  };
+
+  const openShort = (id) => {
+    const url = shortUrlFor(id);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -99,6 +144,11 @@ const LinkManager = () => {
                         {l.description ? (
                           <Typography variant="body2" color="text.secondary" noWrap>{l.description}</Typography>
                         ) : null}
+                        <FormControlLabel
+                          control={<Switch checked={!!l.isActive} onChange={() => toggleActive(l)} size="small" />}
+                          label={l.isActive ? 'Active' : 'Inactive'}
+                          sx={{ mt: 1 }}
+                        />
                       </>
                     )}
                   </Box>
@@ -110,6 +160,12 @@ const LinkManager = () => {
                       <IconButton onClick={() => beginEdit(l)} aria-label="edit"><EditIcon /></IconButton>
                     )}
                     <IconButton color="error" onClick={() => remove(l.id)} aria-label="delete"><DeleteIcon /></IconButton>
+                    <Tooltip title="Copy short link">
+                      <IconButton onClick={() => copyShort(l.id)} aria-label="copy short link"><ContentCopyIcon fontSize="small" /></IconButton>
+                    </Tooltip>
+                    <Tooltip title="Open short link">
+                      <IconButton onClick={() => openShort(l.id)} aria-label="open short link"><OpenInNewIcon fontSize="small" /></IconButton>
+                    </Tooltip>
                     <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down"><ArrowDownwardIcon fontSize="inherit" /></IconButton>
                   </Stack>
                 </Stack>

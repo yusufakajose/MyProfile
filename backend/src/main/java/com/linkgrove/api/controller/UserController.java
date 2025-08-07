@@ -1,22 +1,34 @@
 package com.linkgrove.api.controller;
 
+import com.linkgrove.api.dto.ProfileResponse;
+import com.linkgrove.api.dto.UpdateProfileRequest;
+import com.linkgrove.api.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class UserController {
 
+    private final UserService userService;
+
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(Authentication authentication) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Protected endpoint");
-        response.put("username", authentication.getName());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ProfileResponse> getProfile(Authentication authentication) {
+        ProfileResponse profile = userService.getProfile(authentication.getName());
+        return ResponseEntity.ok(profile);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<ProfileResponse> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request
+    ) {
+        ProfileResponse updated = userService.updateProfile(authentication.getName(), request);
+        return ResponseEntity.ok(updated);
     }
 }
