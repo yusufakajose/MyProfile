@@ -15,6 +15,7 @@ const LinkManager = () => {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // id being edited
   const [editForm, setEditForm] = useState({ title: '', url: '', description: '' });
+  const [dragIndex, setDragIndex] = useState(null);
 
   const redirectOrigin = useMemo(() => {
     const base = client.defaults?.baseURL || '';
@@ -110,6 +111,19 @@ const LinkManager = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleDragStart = (index) => setDragIndex(index);
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = async (index) => {
+    if (dragIndex === null || dragIndex === index) return;
+    const reordered = [...links];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(index, 0, moved);
+    setLinks(reordered);
+    setDragIndex(null);
+    await client.put('/links/reorder', reordered.map((l) => l.id));
+    await load();
+  };
+
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Your Links</Typography>
@@ -126,8 +140,18 @@ const LinkManager = () => {
 
       <Grid container spacing={2}>
         {links.map((l, idx) => (
-          <Grid item xs={12} md={6} lg={4} key={l.id}>
-            <Card>
+          <Grid
+            item
+            xs={12}
+            md={6}
+            lg={4}
+            key={l.id}
+            draggable
+            onDragStart={() => handleDragStart(idx)}
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop(idx)}
+          >
+            <Card sx={{ cursor: 'grab' }}>
               <CardContent>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
                   <Box sx={{ flex: 1, pr: 1 }}>
