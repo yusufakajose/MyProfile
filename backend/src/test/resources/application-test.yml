@@ -1,0 +1,40 @@
+spring:
+  # Database configuration will be handled by Testcontainers
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_schema: public
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  
+  # RabbitMQ configuration will be handled by Testcontainers
+  rabbitmq:
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1s
+          multiplier: 2
+  
+  # Use in-memory Redis for caching in tests (simpler than Testcontainers Redis)
+  cache:
+    type: simple
+  
+  # Logging configuration for tests
+logging:
+  level:
+    com.linkgrove.api: DEBUG
+    org.springframework.amqp: WARN
+    org.hibernate.SQL: WARN
+    org.testcontainers: WARN
+
+# JWT configuration for tests
+jwt:
+  secret: test-secret-key-for-integration-tests-this-should-be-long-enough
+  expiration: 3600000 # 1 hour for tests
