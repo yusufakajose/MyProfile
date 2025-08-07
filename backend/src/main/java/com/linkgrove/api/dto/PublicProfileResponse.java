@@ -17,6 +17,10 @@ public class PublicProfileResponse {
     private String displayName;
     private String bio;
     private String profileImageUrl;
+    private String themePrimaryColor;
+    private String themeAccentColor;
+    private String themeBackgroundColor;
+    private String themeTextColor;
     private List<PublicLinkResponse> links;
 
     @Data

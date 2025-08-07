@@ -82,8 +82,13 @@ const PublicProfile = () => {
     );
   }
 
+  const primary = profile.themePrimaryColor || '#1976d2';
+  const accent = profile.themeAccentColor || '#ff4081';
+  const bg = profile.themeBackgroundColor || '#ffffff';
+  const text = profile.themeTextColor || '#111827';
+
   return (
-    <Box>
+    <Box sx={{ backgroundColor: bg, color: text, minHeight: '100vh' }}>
       {/* Compact header (banner removed) */}
       <Box sx={{ textAlign: 'center', pt: 6, pb: 2 }}>
         <Avatar
@@ -114,25 +119,25 @@ const PublicProfile = () => {
         <Grid container spacing={2}>
           {(profile.links || []).sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)).map((link) => (
             <Grid key={link.id} item xs={12}>
-              <Card elevation={3} sx={{ borderRadius: 16 }}>
+              <Card elevation={3} sx={{ borderRadius: 16, backgroundColor: '#fff' }}>
                 <CardActionArea onClick={() => handleLinkClick(link)}>
                   <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                       <Box>
-                        <Typography variant="h6" fontWeight={700}>{link.title}</Typography>
+                        <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
                         {link.description && (
                           <Typography variant="body2" color="text.secondary">
                             {link.description}
                           </Typography>
                         )}
                         <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                          <LinkIcon fontSize="small" color="primary" />
-                          <Typography variant="caption" color="primary">
+                          <LinkIcon fontSize="small" sx={{ color: accent }} />
+                          <Typography variant="caption" sx={{ color: accent }}>
                             {link.url}
                           </Typography>
                         </Box>
                       </Box>
-                      <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999 }}>
+                      <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary }}>
                         Open
                       </Button>
                     </Box>

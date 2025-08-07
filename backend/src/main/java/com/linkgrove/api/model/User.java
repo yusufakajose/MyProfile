@@ -39,6 +39,18 @@ public class User {
     @Column(length = 200)
     private String profileImageUrl;
 
+    @Column(length = 20)
+    private String themePrimaryColor;
+
+    @Column(length = 20)
+    private String themeAccentColor;
+
+    @Column(length = 20)
+    private String themeBackgroundColor;
+
+    @Column(length = 20)
+    private String themeTextColor;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

@@ -175,6 +175,10 @@ public class LinkService {
                 .displayName(user.getDisplayName())
                 .bio(user.getBio())
                 .profileImageUrl(user.getProfileImageUrl())
+                .themePrimaryColor(user.getThemePrimaryColor())
+                .themeAccentColor(user.getThemeAccentColor())
+                .themeBackgroundColor(user.getThemeBackgroundColor())
+                .themeTextColor(user.getThemeTextColor())
                 .links(linkResponses)
                 .build();
     }

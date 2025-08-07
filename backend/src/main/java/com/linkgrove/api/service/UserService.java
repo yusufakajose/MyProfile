@@ -24,6 +24,10 @@ public class UserService {
                 .displayName(user.getDisplayName())
                 .bio(user.getBio())
                 .profileImageUrl(user.getProfileImageUrl())
+                .themePrimaryColor(user.getThemePrimaryColor())
+                .themeAccentColor(user.getThemeAccentColor())
+                .themeBackgroundColor(user.getThemeBackgroundColor())
+                .themeTextColor(user.getThemeTextColor())
                 .build();
     }
 
@@ -41,6 +45,18 @@ public class UserService {
         if (request.getProfileImageUrl() != null) {
             user.setProfileImageUrl(request.getProfileImageUrl());
         }
+        if (request.getThemePrimaryColor() != null) {
+            user.setThemePrimaryColor(request.getThemePrimaryColor());
+        }
+        if (request.getThemeAccentColor() != null) {
+            user.setThemeAccentColor(request.getThemeAccentColor());
+        }
+        if (request.getThemeBackgroundColor() != null) {
+            user.setThemeBackgroundColor(request.getThemeBackgroundColor());
+        }
+        if (request.getThemeTextColor() != null) {
+            user.setThemeTextColor(request.getThemeTextColor());
+        }
 
         User saved = userRepository.save(user);
         return ProfileResponse.builder()
@@ -49,6 +65,10 @@ public class UserService {
                 .displayName(saved.getDisplayName())
                 .bio(saved.getBio())
                 .profileImageUrl(saved.getProfileImageUrl())
+                .themePrimaryColor(saved.getThemePrimaryColor())
+                .themeAccentColor(saved.getThemeAccentColor())
+                .themeBackgroundColor(saved.getThemeBackgroundColor())
+                .themeTextColor(saved.getThemeTextColor())
                 .build();
     }
 }
