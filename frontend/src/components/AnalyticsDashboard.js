@@ -73,13 +73,48 @@ const AnalyticsDashboard = () => {
     }
   };
 
-  const downloadCsv = (path) => {
+  const buildCsv = (rows, columns) => {
+    const escape = (v) => {
+      if (v == null) return '';
+      const s = String(v).replace(/\"/g, '""');
+      return /[",\n]/.test(s) ? `"${s}"` : s;
+    };
+    const header = columns.map(([h]) => h).join(',');
+    const body = rows.map((r) => columns.map(([, getter]) => escape(getter(r))).join(',')).join('\n');
+    return `${header}\n${body}\n`;
+  };
+
+  const triggerDownload = (csv, filename) => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = `${client.defaults.baseURL}${path}`;
-    link.setAttribute('download', 'analytics.csv');
+    link.href = url;
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadCsv = async (path, filename, fallbackRows, columns) => {
+    try {
+      const res = await client.get(path, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.warn('Server CSV export failed, using client-side fallback', e);
+      if (fallbackRows && columns) {
+        const csv = buildCsv(fallbackRows, columns);
+        triggerDownload(csv, filename);
+      }
+    }
   };
 
   if (loading) {
@@ -118,8 +153,38 @@ const AnalyticsDashboard = () => {
           </Select>
         </FormControl>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" onClick={() => downloadCsv(`/analytics/export/timeseries?days=${timeRange}`)}>Export Timeseries CSV</Button>
-          <Button variant="outlined" onClick={() => downloadCsv(`/analytics/export/top-links`)}>Export Top Links CSV</Button>
+          <Button
+            variant="outlined"
+            onClick={() => downloadCsv(
+              `/analytics/export/timeseries?days=${timeRange}`,
+              `analytics_timeseries_${timeRange}d.csv`,
+              (timeseriesData?.timeseriesData || []),
+              [
+                ['date', r => r.date],
+                ['clicks', r => r.clicks],
+                ['uniqueVisitors', r => r.uniqueVisitors]
+              ]
+            )}
+          >
+            Export Timeseries CSV
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => downloadCsv(
+              `/analytics/export/top-links`,
+              `analytics_top_links.csv`,
+              (topLinksData?.topLinks || []),
+              [
+                ['id', r => r.id],
+                ['title', r => r.title],
+                ['url', r => r.url],
+                ['clickCount', r => r.clickCount],
+                ['displayOrder', r => r.displayOrder]
+              ]
+            )}
+          >
+            Export Top Links CSV
+          </Button>
         </Box>
       </Box>
 

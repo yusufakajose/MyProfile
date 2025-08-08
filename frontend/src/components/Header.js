@@ -1,11 +1,13 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Box, Button } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Analytics as AnalyticsIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => { logout(); navigate('/member-login'); };
   return (
     <AppBar position="static" elevation={1}>
       <Toolbar>
@@ -19,6 +21,9 @@ const Header = () => {
           <Button color="inherit" component={RouterLink} to="/settings/profile">Settings</Button>
           {token && user?.username && (
             <Button color="inherit" component={RouterLink} to={`/u/${user.username}`}>Profile</Button>
+          )}
+          {token && (
+            <Button color="inherit" onClick={handleLogout}>Logout</Button>
           )}
         </Box>
       </Toolbar>

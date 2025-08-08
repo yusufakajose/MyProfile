@@ -128,6 +128,22 @@ const ProfileSettings = () => {
               <TextField label="Background Color" value={themeBackgroundColor} onChange={(e) => setThemeBackgroundColor(e.target.value)} placeholder="#ffffff" fullWidth />
               <TextField label="Text Color" value={themeTextColor} onChange={(e) => setThemeTextColor(e.target.value)} placeholder="#111827" fullWidth />
             </Stack>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" color="text.secondary">Live preview</Typography>
+              <Box sx={{
+                mt: 1,
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: themeBackgroundColor || '#ffffff',
+                color: themeTextColor || '#111827',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Typography variant="subtitle1" sx={{ color: themePrimaryColor || '#1976d2' }}>Primary heading</Typography>
+                <Typography variant="body2">Sample body text</Typography>
+                <Button size="small" sx={{ mt: 1, backgroundColor: themePrimaryColor || '#1976d2', color: '#fff', ':hover': { backgroundColor: themePrimaryColor || '#1976d2' } }}>Primary Button</Button>
+                <Button size="small" sx={{ mt: 1, ml: 1, color: themeAccentColor || '#ff4081' }}>Accent Link</Button>
+              </Box>
+            </Box>
             <Box>
               <Button type="submit" variant="contained" disabled={loading}>Save</Button>
             </Box>
