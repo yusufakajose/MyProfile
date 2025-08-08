@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -16,6 +17,11 @@ const LinkManager = () => {
   const [editing, setEditing] = useState(null); // id being edited
   const [editForm, setEditForm] = useState({ title: '', url: '', description: '' });
   const [dragIndex, setDragIndex] = useState(null);
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(12);
+  const [totalPages, setTotalPages] = useState(1);
+  const [query, setQuery] = useState('');
+  const [pendingQuery, setPendingQuery] = useState('');
 
   const redirectOrigin = useMemo(() => {
     const base = client.defaults?.baseURL || '';
@@ -32,12 +38,21 @@ const LinkManager = () => {
     return form.title.trim() && /^https?:\/\//i.test(form.url.trim());
   }, [form]);
 
-  const load = async () => {
-    const res = await client.get('/links');
-    setLinks(res.data || []);
+  const load = async (nextPage = page, nextQuery = query) => {
+    const params = new URLSearchParams({ page: String(nextPage - 1), size: String(size) });
+    if (nextQuery.trim()) params.set('q', nextQuery.trim());
+    const res = await client.get(`/links?${params.toString()}`);
+    const data = res.data;
+    if (Array.isArray(data)) {
+      setLinks(data);
+      setTotalPages(1);
+    } else {
+      setLinks(data.content || []);
+      setTotalPages((data.totalPages || 1));
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(1, query); setPage(1); }, [query, size]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -135,6 +150,19 @@ const LinkManager = () => {
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
             <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
           </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
+            <TextField
+              size="small"
+              placeholder="Search title/url/description"
+              value={pendingQuery}
+              onChange={(e) => setPendingQuery(e.target.value)}
+              sx={{ flex: 1 }}
+              InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>) }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setQuery(pendingQuery); } }}
+            />
+            <Button variant="outlined" onClick={() => setQuery(pendingQuery)}>Search</Button>
+            {query && <Button variant="text" onClick={() => { setPendingQuery(''); setQuery(''); }}>Clear</Button>}
+          </Stack>
         </CardContent>
       </Card>
 
@@ -203,6 +231,16 @@ const LinkManager = () => {
           </Grid>
         ))}
       </Grid>
+      {totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(_, p) => { setPage(p); load(p, query); }}
+            color="primary"
+          />
+        </Box>
+      )}
     </Box>
   );
 };

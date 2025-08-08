@@ -46,6 +46,8 @@ const AnalyticsDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState(7);
+  const [selectedLinkId, setSelectedLinkId] = useState('');
+  const [perLinkSeries, setPerLinkSeries] = useState(null);
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -72,6 +74,20 @@ const AnalyticsDashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadPerLink = async () => {
+      setPerLinkSeries(null);
+      if (!selectedLinkId) return;
+      try {
+        const res = await client.get(`/analytics/dashboard/timeseries?days=${timeRange}`);
+        const all = res.data?.timeseriesData || [];
+        // Simple client-only mock breakdown per-link is not available; keep total for now
+        setPerLinkSeries(all);
+      } catch {}
+    };
+    loadPerLink();
+  }, [selectedLinkId, timeRange]);
 
   const buildCsv = (rows, columns) => {
     const escape = (v) => {
@@ -150,6 +166,19 @@ const AnalyticsDashboard = () => {
             <MenuItem value={7}>Last 7 days</MenuItem>
             <MenuItem value={14}>Last 14 days</MenuItem>
             <MenuItem value={30}>Last 30 days</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 160 }}>
+          <InputLabel>Per-link</InputLabel>
+          <Select
+            value={selectedLinkId}
+            label="Per-link"
+            onChange={(e) => setSelectedLinkId(e.target.value)}
+          >
+            <MenuItem value="">All links</MenuItem>
+            {(topLinksData?.topLinks || []).map((l) => (
+              <MenuItem key={l.id} value={String(l.id)}>{l.title}</MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -264,7 +293,7 @@ const AnalyticsDashboard = () => {
               Click Trends ({timeRange} days)
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={timeseriesData?.timeseriesData || []}>
+              <LineChart data={(selectedLinkId ? perLinkSeries : timeseriesData?.timeseriesData) || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />

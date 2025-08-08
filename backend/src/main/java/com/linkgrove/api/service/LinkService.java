@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +70,22 @@ public class LinkService {
                 .stream()
                 .map(this::mapToLinkResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LinkResponse> getUserLinksPage(String username, Pageable pageable) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return linkRepository.findByUserOrderByDisplayOrderAsc(user, pageable)
+                .map(this::mapToLinkResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LinkResponse> searchUserLinks(String username, String query, Pageable pageable) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return linkRepository.searchUserLinks(user, query, pageable)
+                .map(this::mapToLinkResponse);
     }
 
     @Transactional(readOnly = true)

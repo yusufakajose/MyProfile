@@ -5,6 +5,9 @@ import com.linkgrove.api.service.LinkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +32,18 @@ public class LinkController {
     }
 
     @GetMapping
-    public ResponseEntity<List<LinkResponse>> getUserLinks(Authentication authentication) {
+    public ResponseEntity<?> getUserLinks(Authentication authentication,
+                                          @RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "12") int size,
+                                          @RequestParam(required = false) String q) {
         String username = authentication.getName();
-        List<LinkResponse> links = linkService.getUserLinks(username);
-        return ResponseEntity.ok(links);
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, Math.min(100, size)));
+        if (q != null && !q.isBlank()) {
+            Page<LinkResponse> result = linkService.searchUserLinks(username, q.trim(), pageable);
+            return ResponseEntity.ok(result);
+        }
+        Page<LinkResponse> result = linkService.getUserLinksPage(username, pageable);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{linkId}")

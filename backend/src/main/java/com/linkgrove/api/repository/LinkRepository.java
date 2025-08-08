@@ -2,6 +2,8 @@ package com.linkgrove.api.repository;
 
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,7 @@ import java.util.Optional;
 public interface LinkRepository extends JpaRepository<Link, Long> {
 
     List<Link> findByUserOrderByDisplayOrderAsc(User user);
+    Page<Link> findByUserOrderByDisplayOrderAsc(User user, Pageable pageable);
 
     List<Link> findByUserAndIsActiveTrueOrderByDisplayOrderAsc(User user);
 
@@ -27,4 +30,10 @@ public interface LinkRepository extends JpaRepository<Link, Long> {
 
     @Query("SELECT MAX(l.displayOrder) FROM Link l WHERE l.user = :user")
     Integer findMaxDisplayOrderForUser(@Param("user") User user);
+
+    @Query("SELECT l FROM Link l WHERE l.user = :user AND (" +
+            "LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            "LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            "LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%')) )")
+    Page<Link> searchUserLinks(@Param("user") User user, @Param("q") String q, Pageable pageable);
 }
