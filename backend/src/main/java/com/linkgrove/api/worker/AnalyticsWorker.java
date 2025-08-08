@@ -5,6 +5,7 @@ import com.linkgrove.api.event.LinkClickEvent;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkReferrerDailyAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -26,6 +27,7 @@ public class AnalyticsWorker {
 
     private final LinkRepository linkRepository;
     private final LinkClickDailyAggregateRepository aggregateRepository;
+    private final LinkReferrerDailyAggregateRepository referrerAggregateRepository;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     /**
@@ -81,6 +83,20 @@ public class AnalyticsWorker {
                 redisTemplate.expire(redisKey, java.time.Duration.ofDays(40));
                 if (added != null && added > 0) {
                     aggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day);
+                }
+            }
+
+            // Referrer aggregation (domain-level)
+            String domain = extractDomain(event.getReferrer());
+            if (domain != null) {
+                referrerAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day, domain);
+                if (visitorId != null) {
+                    String rKey = String.format("uvr:%s:%d:%s:%s", event.getUsername(), event.getLinkId(), day, domain);
+                    Long addedR = redisTemplate.opsForSet().add(rKey, visitorId);
+                    redisTemplate.expire(rKey, java.time.Duration.ofDays(40));
+                    if (addedR != null && addedR > 0) {
+                        referrerAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, domain);
+                    }
                 }
             }
             
@@ -151,5 +167,17 @@ public class AnalyticsWorker {
         if (ip == null && ua == null) return null;
         String uaSig = (ua == null) ? "" : Integer.toHexString(ua.hashCode());
         return "i:" + (ip != null ? ip : "?") + ":u:" + uaSig;
+    }
+
+    private String extractDomain(String referrer) {
+        if (referrer == null || referrer.isBlank()) return null;
+        try {
+            java.net.URI uri = java.net.URI.create(referrer);
+            String host = uri.getHost();
+            if (host == null) return null;
+            return host.toLowerCase();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

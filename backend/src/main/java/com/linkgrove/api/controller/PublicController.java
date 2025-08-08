@@ -2,6 +2,7 @@ package com.linkgrove.api.controller;
 
 import com.linkgrove.api.dto.PublicProfileResponse;
 import com.linkgrove.api.service.LinkService;
+import com.linkgrove.api.service.RateLimitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class PublicController {
 
     private final LinkService linkService;
+    private final RateLimitService rateLimitService;
 
     @GetMapping("/{username}")
     public ResponseEntity<PublicProfileResponse> getPublicProfile(@PathVariable String username) {
@@ -28,7 +30,16 @@ public class PublicController {
         if (clientIp == null || clientIp.isBlank()) {
             clientIp = request.getRemoteAddr();
         }
+        var rl = rateLimitService.checkAndUpdate("pubclick:" + clientIp, 60, java.time.Duration.ofMinutes(1));
+        if (!rl.allowed()) {
+            return ResponseEntity.status(429)
+                    .header("Retry-After", String.valueOf(rl.retryAfterSeconds()))
+                    .header("X-RateLimit-Remaining", "0")
+                    .build();
+        }
         linkService.trackLinkClick(linkId, clientIp);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok()
+                .header("X-RateLimit-Remaining", String.valueOf(rl.remaining()))
+                .build();
     }
 }

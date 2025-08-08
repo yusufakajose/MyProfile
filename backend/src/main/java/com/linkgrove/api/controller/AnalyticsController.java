@@ -65,6 +65,13 @@ public class AnalyticsController {
         return ResponseEntity.ok(timeseries);
     }
 
+    @GetMapping("/referrers")
+    public ResponseEntity<?> getReferrerBreakdown(Authentication authentication,
+                                                  @RequestParam(defaultValue = "7") int days) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(analyticsService.getReferrerBreakdown(username, days));
+    }
+
     @GetMapping(value = "/export/timeseries", produces = "text/csv")
     public ResponseEntity<String> exportTimeseriesCsv(Authentication authentication,
                                                       @RequestParam(defaultValue = "7") int days) {
