@@ -16,9 +16,7 @@ import {
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LinkIcon from '@mui/icons-material/Link';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:8080';
+import client from '../api/client';
 
 const ProfileHeaderSkeleton = () => (
   <Box sx={{ py: 6, textAlign: 'center' }}>
@@ -38,7 +36,7 @@ const PublicProfile = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${API_BASE}/api/public/${username}`);
+      const res = await client.get(`/public/${username}`);
       setProfile(res.data);
     } catch (err) {
       setError('Profile not found');
@@ -52,7 +50,7 @@ const PublicProfile = () => {
   }, [fetchProfile]);
 
   const handleLinkClick = async (link) => {
-    axios.post(`${API_BASE}/api/public/click/${link.id}`).catch(() => {});
+    client.post(`/public/click/${link.id}`).catch(() => {});
     window.open(link.url, '_blank', 'noopener,noreferrer');
   };
 
