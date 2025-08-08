@@ -25,4 +25,5 @@ public class LinkResponse {
     private String alias;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+    private java.util.List<String> tags;
 }

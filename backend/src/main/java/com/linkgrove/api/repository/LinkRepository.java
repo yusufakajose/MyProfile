@@ -37,4 +37,18 @@ public interface LinkRepository extends JpaRepository<Link, Long> {
             "LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
             "LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%')) )")
     Page<Link> searchUserLinks(@Param("user") User user, @Param("q") String q, Pageable pageable);
+
+    @Query("SELECT DISTINCT l FROM Link l LEFT JOIN l.tags t WHERE l.user = :user " +
+            "AND (:q IS NULL OR :q = '' OR LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+            "AND (:tagNames IS NULL OR SIZE(:tagNames) = 0 OR LOWER(t.name) IN :tagNames) ORDER BY l.displayOrder ASC")
+    Page<Link> searchUserLinksWithTags(@Param("user") User user,
+                                       @Param("q") String q,
+                                       @Param("tagNames") java.util.List<String> tagNames,
+                                       Pageable pageable);
+
+    @Query("SELECT DISTINCT l FROM Link l LEFT JOIN l.tags t WHERE l.user = :user " +
+            "AND (:tagNames IS NULL OR SIZE(:tagNames) = 0 OR LOWER(t.name) IN :tagNames) ORDER BY l.displayOrder ASC")
+    Page<Link> findByUserAndTags(@Param("user") User user,
+                                 @Param("tagNames") java.util.List<String> tagNames,
+                                 Pageable pageable);
 }

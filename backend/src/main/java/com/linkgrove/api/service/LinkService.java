@@ -5,6 +5,7 @@ import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.UserRepository;
+import com.linkgrove.api.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,6 +29,7 @@ public class LinkService {
     private final LinkRepository linkRepository;
     private final UserRepository userRepository;
     private final StringRedisTemplate redisTemplate;
+    private final TagRepository tagRepository;
 
     @Caching(evict = {
         @CacheEvict(value = "publicProfiles", key = "#username"),
@@ -65,6 +67,9 @@ public class LinkService {
             link.setAlias(alias);
         }
 
+        if (request.getTags() != null) {
+            link.setTags(resolveTags(request.getTags()));
+        }
         Link saved = linkRepository.save(link);
         return mapToLinkResponse(saved);
     }
@@ -83,18 +88,20 @@ public class LinkService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LinkResponse> getUserLinksPage(String username, Pageable pageable) {
+    public Page<LinkResponse> getUserLinksPage(String username, java.util.List<String> tagNames, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return linkRepository.findByUserOrderByDisplayOrderAsc(user, pageable)
-                .map(this::mapToLinkResponse);
+        Page<Link> page = (tagNames == null || tagNames.isEmpty())
+                ? linkRepository.findByUserOrderByDisplayOrderAsc(user, pageable)
+                : linkRepository.findByUserAndTags(user, normalize(tagNames), pageable);
+        return page.map(this::mapToLinkResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<LinkResponse> searchUserLinks(String username, String query, Pageable pageable) {
+    public Page<LinkResponse> searchUserLinks(String username, String query, java.util.List<String> tagNames, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return linkRepository.searchUserLinks(user, query, pageable)
+        return linkRepository.searchUserLinksWithTags(user, query, normalize(tagNames), pageable)
                 .map(this::mapToLinkResponse);
     }
 
@@ -107,6 +114,18 @@ public class LinkService {
                 .orElseThrow(() -> new RuntimeException("Link not found"));
 
         return mapToLinkResponse(link);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<String> listUserTagNames(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return linkRepository.findByUserOrderByDisplayOrderAsc(user).stream()
+                .flatMap(l -> l.getTags().stream())
+                .map(t -> t.getName())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     @Caching(evict = {
@@ -130,6 +149,9 @@ public class LinkService {
         link.setDescription(request.getDescription());
         link.setStartAt(request.getStartAt());
         link.setEndAt(request.getEndAt());
+        if (request.getTags() != null) {
+            link.setTags(resolveTags(request.getTags()));
+        }
         
         if (request.getIsActive() != null) {
             link.setIsActive(request.getIsActive());
@@ -270,6 +292,27 @@ public class LinkService {
                 .alias(link.getAlias())
                 .startAt(link.getStartAt())
                 .endAt(link.getEndAt())
+                .tags(link.getTags().stream().map(t -> t.getName()).sorted().toList())
                 .build();
+    }
+
+    private java.util.Set<com.linkgrove.api.model.Tag> resolveTags(java.util.List<String> names) {
+        java.util.Set<com.linkgrove.api.model.Tag> out = new java.util.HashSet<>();
+        for (String raw : names) {
+            if (raw == null) continue;
+            String n = raw.trim().toLowerCase();
+            if (n.isEmpty()) continue;
+            com.linkgrove.api.model.Tag tag = tagRepository.findByName(n).orElseGet(() -> {
+                com.linkgrove.api.model.Tag t = com.linkgrove.api.model.Tag.builder().name(n).build();
+                return tagRepository.save(t);
+            });
+            out.add(tag);
+        }
+        return out;
+    }
+
+    private java.util.List<String> normalize(java.util.List<String> names) {
+        if (names == null) return java.util.List.of();
+        return names.stream().filter(java.util.Objects::nonNull).map(s -> s.trim().toLowerCase()).filter(s -> !s.isEmpty()).distinct().toList();
     }
 }

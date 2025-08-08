@@ -35,15 +35,22 @@ public class LinkController {
     public ResponseEntity<?> getUserLinks(Authentication authentication,
                                           @RequestParam(defaultValue = "0") int page,
                                           @RequestParam(defaultValue = "12") int size,
-                                          @RequestParam(required = false) String q) {
+                                          @RequestParam(required = false) String q,
+                                          @RequestParam(required = false) List<String> tags) {
         String username = authentication.getName();
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, Math.min(100, size)));
         if (q != null && !q.isBlank()) {
-            Page<LinkResponse> result = linkService.searchUserLinks(username, q.trim(), pageable);
+            Page<LinkResponse> result = linkService.searchUserLinks(username, q.trim(), tags, pageable);
             return ResponseEntity.ok(result);
         }
-        Page<LinkResponse> result = linkService.getUserLinksPage(username, pageable);
+        Page<LinkResponse> result = linkService.getUserLinksPage(username, tags, pageable);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/tags")
+    public ResponseEntity<List<String>> listUserTags(Authentication authentication) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(linkService.listUserTagNames(username));
     }
 
     @GetMapping("/{linkId}")

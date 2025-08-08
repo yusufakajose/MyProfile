@@ -30,4 +30,6 @@ public class UpdateLinkRequest {
 
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+
+    private java.util.List<String> tags; // names
 }

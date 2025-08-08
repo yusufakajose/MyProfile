@@ -12,10 +12,12 @@ import client from '../api/client';
 
 const LinkManager = () => {
   const [links, setLinks] = useState([]);
-  const [form, setForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
+  const [form, setForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // id being edited
-  const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
+  const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
@@ -41,6 +43,7 @@ const LinkManager = () => {
   const load = async (nextPage = page, nextQuery = query) => {
     const params = new URLSearchParams({ page: String(nextPage - 1), size: String(size) });
     if (nextQuery.trim()) params.set('q', nextQuery.trim());
+    if (selectedTags.length) selectedTags.forEach(t => params.append('tags', t));
     const res = await client.get(`/links?${params.toString()}`);
     const data = res.data;
     if (Array.isArray(data)) {
@@ -52,7 +55,8 @@ const LinkManager = () => {
     }
   };
 
-  useEffect(() => { load(1, query); setPage(1); }, [query, size]);
+  useEffect(() => { load(1, query); setPage(1); }, [query, size, selectedTags]);
+  useEffect(() => { (async () => { try { const r = await client.get('/links/tags'); setAllTags(r.data || []); } catch {} })(); }, []);
 
   const create = async (e) => {
     e.preventDefault();
@@ -64,7 +68,7 @@ const LinkManager = () => {
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString();
       if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
       await client.post('/links', payload);
-      setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
+      setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
       await load();
     } finally {
       setLoading(false);
@@ -163,6 +167,7 @@ const LinkManager = () => {
             <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
             <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" />
+            <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
             <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
             <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
             <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
@@ -179,6 +184,12 @@ const LinkManager = () => {
             />
             <Button variant="outlined" onClick={() => setQuery(pendingQuery)}>Search</Button>
             {query && <Button variant="text" onClick={() => { setPendingQuery(''); setQuery(''); }}>Clear</Button>}
+          </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+            {allTags.map((t) => (
+              <Button key={t} size="small" variant={selectedTags.includes(t) ? 'contained' : 'outlined'} onClick={() => setSelectedTags((prev) => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}>{t}</Button>
+            ))}
+            {allTags.length === 0 && <Typography variant="caption" color="text.secondary">No tags yet</Typography>}
           </Stack>
         </CardContent>
       </Card>
@@ -206,6 +217,7 @@ const LinkManager = () => {
                         <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                         <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" />
+                        <TextField size="small" label="Tags (comma separated)" value={(editForm.tags || []).join(', ')} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="news, personal" />
                         <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} />
                         <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} />
                       </Stack>
@@ -223,6 +235,9 @@ const LinkManager = () => {
                         ) : null}
                         {l.alias ? (
                           <Typography variant="body2" color="text.secondary" noWrap>Alias: {l.alias}</Typography>
+                        ) : null}
+                        {(l.tags && l.tags.length > 0) ? (
+                          <Typography variant="body2" color="text.secondary" noWrap>Tags: {l.tags.join(', ')}</Typography>
                         ) : null}
                         {(l.startAt || l.endAt) ? (
                           <Typography variant="body2" color="text.secondary" noWrap>
