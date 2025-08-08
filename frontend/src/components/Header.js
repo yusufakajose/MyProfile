@@ -19,6 +19,7 @@ const Header = () => {
           <Button color="inherit" component={RouterLink} to="/analytics">Analytics</Button>
           <Button color="inherit" component={RouterLink} to="/links">Links</Button>
           <Button color="inherit" component={RouterLink} to="/settings/profile">Settings</Button>
+          <Button color="inherit" component={RouterLink} to="/settings/webhooks">Webhooks</Button>
           {token && user?.username && (
             <Button color="inherit" component={RouterLink} to={`/u/${user.username}`}>Profile</Button>
           )}

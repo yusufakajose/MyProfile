@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import LinkManager from './components/LinkManager';
 import ProfileSettings from './components/ProfileSettings';
+import WebhookSettings from './components/WebhookSettings';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -47,6 +48,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ProfileSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/webhooks"
+              element={
+                <ProtectedRoute>
+                  <WebhookSettings />
                 </ProtectedRoute>
               }
             />
