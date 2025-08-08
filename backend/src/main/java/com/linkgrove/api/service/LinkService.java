@@ -88,20 +88,18 @@ public class LinkService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LinkResponse> getUserLinksPage(String username, java.util.List<String> tagNames, Pageable pageable) {
+    public Page<LinkResponse> getUserLinksPage(String username, java.util.List<String> tagNames, Boolean active, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Page<Link> page = (tagNames == null || tagNames.isEmpty())
-                ? linkRepository.findByUserOrderByDisplayOrderAsc(user, pageable)
-                : linkRepository.findByUserAndTags(user, normalize(tagNames), pageable);
+        Page<Link> page = linkRepository.findByUserAndTags(user, normalize(tagNames), active, pageable);
         return page.map(this::mapToLinkResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<LinkResponse> searchUserLinks(String username, String query, java.util.List<String> tagNames, Pageable pageable) {
+    public Page<LinkResponse> searchUserLinks(String username, String query, java.util.List<String> tagNames, Boolean active, Pageable pageable) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return linkRepository.searchUserLinksWithTags(user, query, normalize(tagNames), pageable)
+        return linkRepository.searchUserLinksWithTags(user, query, normalize(tagNames), active, pageable)
                 .map(this::mapToLinkResponse);
     }
 

@@ -18,6 +18,8 @@ const LinkManager = () => {
   const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
   const [allTags, setAllTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [status, setStatus] = useState('all');
+  const [sort, setSort] = useState('order');
   const [dragIndex, setDragIndex] = useState(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
@@ -41,7 +43,7 @@ const LinkManager = () => {
   }, [form]);
 
   const load = async (nextPage = page, nextQuery = query) => {
-    const params = new URLSearchParams({ page: String(nextPage - 1), size: String(size) });
+    const params = new URLSearchParams({ page: String(nextPage - 1), size: String(size), status, sort });
     if (nextQuery.trim()) params.set('q', nextQuery.trim());
     if (selectedTags.length) selectedTags.forEach(t => params.append('tags', t));
     const res = await client.get(`/links?${params.toString()}`);
@@ -55,7 +57,7 @@ const LinkManager = () => {
     }
   };
 
-  useEffect(() => { load(1, query); setPage(1); }, [query, size, selectedTags]);
+  useEffect(() => { load(1, query); setPage(1); }, [query, size, selectedTags, status, sort]);
   useEffect(() => { (async () => { try { const r = await client.get('/links/tags'); setAllTags(r.data || []); } catch {} })(); }, []);
 
   const create = async (e) => {
@@ -184,6 +186,34 @@ const LinkManager = () => {
             />
             <Button variant="outlined" onClick={() => setQuery(pendingQuery)}>Search</Button>
             {query && <Button variant="text" onClick={() => { setPendingQuery(''); setQuery(''); }}>Clear</Button>}
+            <TextField select size="small" label="Status" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: 150 }} SelectProps={{ native: true }}>
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </TextField>
+            <TextField select size="small" label="Sort" value={sort} onChange={(e) => setSort(e.target.value)} sx={{ width: 180 }} SelectProps={{ native: true }}>
+              <option value="order">Order</option>
+              <option value="created_desc">Created ↓</option>
+              <option value="updated_desc">Updated ↓</option>
+              <option value="clicks_desc">Clicks ↓</option>
+            </TextField>
+            <Button variant="text" onClick={async () => {
+              const params = new URLSearchParams({ sort, status });
+              if (query.trim()) params.set('q', query.trim());
+              selectedTags.forEach(t => params.append('tags', t));
+              const url = `${client.defaults.baseURL}/links/export?${params.toString()}`;
+              const tokenStr = localStorage.getItem('auth');
+              const token = tokenStr ? JSON.parse(tokenStr).token : null;
+              const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+              const text = await resp.text();
+              const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'links.csv';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+            }}>Export CSV</Button>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
             {allTags.map((t) => (
