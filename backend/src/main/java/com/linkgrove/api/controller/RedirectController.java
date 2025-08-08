@@ -43,7 +43,9 @@ public class RedirectController {
             HttpServletRequest request) {
         String clientIp = request.getHeader("X-Forwarded-For");
         if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
-        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, 300, java.time.Duration.ofMinutes(1));
+        int limit = 300;
+        java.time.Duration window = java.time.Duration.ofMinutes(1);
+        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, limit, window);
         String targetUrl = linkRedirectService.getRedirectUrl(linkId);
         
         // Publish click event asynchronously (fire-and-forget)
@@ -61,6 +63,8 @@ public class RedirectController {
         if (!rl.allowed()) {
             headers.add("Retry-After", String.valueOf(rl.retryAfterSeconds()));
         }
+        headers.add("X-RateLimit-Limit", String.valueOf(limit));
+        headers.add("X-RateLimit-Window", String.valueOf(window.toSeconds()));
         headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
@@ -71,7 +75,9 @@ public class RedirectController {
             HttpServletRequest request) {
         String clientIp = request.getHeader("X-Forwarded-For");
         if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
-        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, 300, java.time.Duration.ofMinutes(1));
+        int limit = 300;
+        java.time.Duration window = java.time.Duration.ofMinutes(1);
+        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, limit, window);
         var link = linkRedirectService.getLinkByAlias(alias);
         String targetUrl = link.getUrl();
 
@@ -85,6 +91,8 @@ public class RedirectController {
         if (!rl.allowed()) {
             headers.add("Retry-After", String.valueOf(rl.retryAfterSeconds()));
         }
+        headers.add("X-RateLimit-Limit", String.valueOf(limit));
+        headers.add("X-RateLimit-Window", String.valueOf(window.toSeconds()));
         headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }

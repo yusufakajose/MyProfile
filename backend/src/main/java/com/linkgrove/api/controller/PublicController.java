@@ -30,15 +30,21 @@ public class PublicController {
         if (clientIp == null || clientIp.isBlank()) {
             clientIp = request.getRemoteAddr();
         }
-        var rl = rateLimitService.checkAndUpdate("pubclick:" + clientIp, 60, java.time.Duration.ofMinutes(1));
+        int limit = 60;
+        java.time.Duration window = java.time.Duration.ofMinutes(1);
+        var rl = rateLimitService.checkAndUpdate("pubclick:" + clientIp, limit, window);
         if (!rl.allowed()) {
             return ResponseEntity.status(429)
                     .header("Retry-After", String.valueOf(rl.retryAfterSeconds()))
+                    .header("X-RateLimit-Limit", String.valueOf(limit))
+                    .header("X-RateLimit-Window", String.valueOf(window.toSeconds()))
                     .header("X-RateLimit-Remaining", "0")
                     .build();
         }
         linkService.trackLinkClick(linkId, clientIp);
         return ResponseEntity.ok()
+                .header("X-RateLimit-Limit", String.valueOf(limit))
+                .header("X-RateLimit-Window", String.valueOf(window.toSeconds()))
                 .header("X-RateLimit-Remaining", String.valueOf(rl.remaining()))
                 .build();
     }
