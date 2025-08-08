@@ -31,6 +31,7 @@ public class AnalyticsWorker {
     private final LinkReferrerDailyAggregateRepository referrerAggregateRepository;
     private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    private final com.linkgrove.api.service.WebhookService webhookService;
 
     /**
      * Process link click events from RabbitMQ queue.
@@ -119,6 +120,9 @@ public class AnalyticsWorker {
             
             log.debug("Successfully processed click event for link {}, new count: {}", 
                     event.getLinkId(), link.getClickCount());
+
+            // Emit webhook (best-effort)
+            webhookService.emitLinkClick(event.getUsername(), event.getLinkId(), event.getTargetUrl(), event.getReferrer(), event.getClientIp(), event.getUserAgent());
             
         } catch (Exception e) {
             log.error("Failed to process click event for link {}: {}", 
