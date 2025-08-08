@@ -55,8 +55,16 @@ public class LinkService {
                 .clickCount(0L)
                 .build();
 
-        link = linkRepository.save(link);
-        return mapToLinkResponse(link);
+        if (request.getAlias() != null && !request.getAlias().isBlank()) {
+            String alias = request.getAlias().trim();
+            linkRepository.findByAlias(alias).ifPresent(existing -> {
+                throw new RuntimeException("Alias already in use");
+            });
+            link.setAlias(alias);
+        }
+
+        Link saved = linkRepository.save(link);
+        return mapToLinkResponse(saved);
     }
 
     @Cacheable(value = "userLinks", key = "#username")
@@ -121,6 +129,19 @@ public class LinkService {
         
         if (request.getIsActive() != null) {
             link.setIsActive(request.getIsActive());
+        }
+
+        if (request.getAlias() != null) {
+            String trimmed = request.getAlias().trim();
+            if (trimmed.isEmpty()) {
+                link.setAlias(null);
+            } else if (!trimmed.equals(link.getAlias())) {
+                Link existing = linkRepository.findByAlias(trimmed).orElse(null);
+                if (existing != null && !existing.getId().equals(link.getId())) {
+                    throw new RuntimeException("Alias already in use");
+                }
+                link.setAlias(trimmed);
+            }
         }
 
         link = linkRepository.save(link);
@@ -233,6 +254,7 @@ public class LinkService {
                 .clickCount(link.getClickCount())
                 .createdAt(link.getCreatedAt())
                 .updatedAt(link.getUpdatedAt())
+                .alias(link.getAlias())
                 .build();
     }
 }

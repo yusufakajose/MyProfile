@@ -12,10 +12,10 @@ import client from '../api/client';
 
 const LinkManager = () => {
   const [links, setLinks] = useState([]);
-  const [form, setForm] = useState({ title: '', url: '', description: '' });
+  const [form, setForm] = useState({ title: '', url: '', description: '', alias: '' });
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // id being edited
-  const [editForm, setEditForm] = useState({ title: '', url: '', description: '' });
+  const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '' });
   const [dragIndex, setDragIndex] = useState(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
@@ -60,7 +60,7 @@ const LinkManager = () => {
     setLoading(true);
     try {
       await client.post('/links', form);
-      setForm({ title: '', url: '', description: '' });
+      setForm({ title: '', url: '', description: '', alias: '' });
       await load();
     } finally {
       setLoading(false);
@@ -74,7 +74,7 @@ const LinkManager = () => {
 
   const beginEdit = (link) => {
     setEditing(link.id);
-    setEditForm({ title: link.title || '', url: link.url || '', description: link.description || '' });
+    setEditForm({ title: link.title || '', url: link.url || '', description: link.description || '', alias: link.alias || '' });
   };
 
   const saveEdit = async (id) => {
@@ -105,10 +105,10 @@ const LinkManager = () => {
     await load();
   };
 
-  const shortUrlFor = (id) => `${redirectOrigin}/r/${id}`;
+  const shortUrlFor = (id, alias) => alias ? `${redirectOrigin}/r/a/${encodeURIComponent(alias)}` : `${redirectOrigin}/r/${id}`;
 
-  const copyShort = async (id) => {
-    const url = shortUrlFor(id);
+  const copyShort = async (id, alias) => {
+    const url = shortUrlFor(id, alias);
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -121,8 +121,8 @@ const LinkManager = () => {
     }
   };
 
-  const openShort = (id) => {
-    const url = shortUrlFor(id);
+  const openShort = (id, alias) => {
+    const url = shortUrlFor(id, alias);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -148,6 +148,7 @@ const LinkManager = () => {
             <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} />
             <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
+            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" />
             <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
@@ -188,6 +189,7 @@ const LinkManager = () => {
                         <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
                         <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" />
                       </Stack>
                     ) : (
                       <>
@@ -200,6 +202,9 @@ const LinkManager = () => {
                         <Typography variant="body2" color="text.secondary" noWrap>{l.url}</Typography>
                         {l.description ? (
                           <Typography variant="body2" color="text.secondary" noWrap>{l.description}</Typography>
+                        ) : null}
+                        {l.alias ? (
+                          <Typography variant="body2" color="text.secondary" noWrap>Alias: {l.alias}</Typography>
                         ) : null}
                         <FormControlLabel
                           control={<Switch checked={!!l.isActive} onChange={() => toggleActive(l)} size="small" />}
@@ -218,10 +223,10 @@ const LinkManager = () => {
                     )}
                     <IconButton color="error" onClick={() => remove(l.id)} aria-label="delete"><DeleteIcon /></IconButton>
                     <Tooltip title="Copy short link">
-                      <IconButton onClick={() => copyShort(l.id)} aria-label="copy short link"><ContentCopyIcon fontSize="small" /></IconButton>
+                      <IconButton onClick={() => copyShort(l.id, l.alias)} aria-label="copy short link"><ContentCopyIcon fontSize="small" /></IconButton>
                     </Tooltip>
                     <Tooltip title="Open short link">
-                      <IconButton onClick={() => openShort(l.id)} aria-label="open short link"><OpenInNewIcon fontSize="small" /></IconButton>
+                      <IconButton onClick={() => openShort(l.id, l.alias)} aria-label="open short link"><OpenInNewIcon fontSize="small" /></IconButton>
                     </Tooltip>
                     <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down"><ArrowDownwardIcon fontSize="inherit" /></IconButton>
                   </Stack>

@@ -22,4 +22,5 @@ public class LinkResponse {
     private Long clickCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String alias;
 }

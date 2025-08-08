@@ -19,4 +19,8 @@ public class CreateLinkRequest {
 
     @Size(max = 200, message = "Description must not exceed 200 characters")
     private String description;
+
+    @Size(min = 3, max = 50, message = "Alias must be 3-50 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9-_\\.]+$", message = "Alias can contain letters, numbers, hyphen, underscore, dot")
+    private String alias;
 }

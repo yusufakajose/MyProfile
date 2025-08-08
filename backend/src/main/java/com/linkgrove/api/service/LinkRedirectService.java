@@ -52,6 +52,17 @@ public class LinkRedirectService {
         return link.getUrl();
     }
 
+    @Cacheable(value = "linkRedirectsByAlias", key = "#alias")
+    @Transactional(readOnly = true)
+    public Link getLinkByAlias(String alias) {
+        Link link = linkRepository.findByAlias(alias)
+                .orElseThrow(() -> new LinkNotFoundException("Alias not found: " + alias));
+        if (!link.getIsActive()) {
+            throw new LinkNotFoundException("Link is inactive for alias: " + alias);
+        }
+        return link;
+    }
+
     /**
      * Publish click event to RabbitMQ for asynchronous processing.
      * This method is fire-and-forget for maximum redirect performance.

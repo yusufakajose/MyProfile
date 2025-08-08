@@ -21,6 +21,7 @@ public interface LinkRepository extends JpaRepository<Link, Long> {
     List<Link> findByUserAndIsActiveTrueOrderByDisplayOrderAsc(User user);
 
     Optional<Link> findByIdAndUser(Long id, User user);
+    Optional<Link> findByAlias(String alias);
 
     @Query("SELECT l FROM Link l WHERE l.user.username = :username AND l.isActive = true ORDER BY l.displayOrder ASC")
     List<Link> findActiveLinksForPublicProfile(@Param("username") String username);

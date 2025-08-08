@@ -58,6 +58,24 @@ public class RedirectController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
+    @GetMapping("/a/{alias}")
+    public ResponseEntity<Void> redirectToAlias(
+            @PathVariable String alias,
+            HttpServletRequest request) {
+
+        var link = linkRedirectService.getLinkByAlias(alias);
+        String targetUrl = link.getUrl();
+
+        // Publish click event using link id
+        linkRedirectService.publishClickEvent(link.getId(), request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(URI.create(targetUrl));
+        headers.add("Cache-Control", "public, max-age=300");
+        log.debug("Redirecting alias {} to {} (id {})", alias, targetUrl, link.getId());
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+    }
+
     /**
      * Preview endpoint that returns link information without redirecting.
      * Useful for link validation and preview generation.
