@@ -6,6 +6,7 @@ import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.UserRepository;
 import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
 import com.linkgrove.api.repository.LinkReferrerDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkDeviceDailyAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,6 +26,7 @@ public class AnalyticsService {
     private final UserRepository userRepository;
     private final LinkClickDailyAggregateRepository aggregateRepository;
     private final LinkReferrerDailyAggregateRepository referrerAggregateRepository;
+    private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
 
     @Cacheable(value = "analytics", key = "#username + '_overview'")
     @Transactional(readOnly = true)
@@ -283,6 +285,38 @@ public class AnalyticsService {
                 "username", username,
                 "period", days + " days",
                 "referrers", list
+        );
+    }
+
+    @Cacheable(value = "analytics", key = "#username + '_devices_' + #days")
+    @Transactional(readOnly = true)
+    public Map<String, Object> getDeviceBreakdown(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = deviceAggregateRepository.findRange(user.getUsername(), start, end);
+        Map<String, Map<String, Long>> byDev = new java.util.HashMap<>();
+        for (var r : rows) {
+            var m = byDev.computeIfAbsent(r.getDeviceType(), k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        for (var e : byDev.entrySet()) {
+            var m = new java.util.HashMap<String, Object>();
+            m.put("deviceType", e.getKey());
+            m.put("clicks", e.getValue().getOrDefault("clicks", 0L));
+            m.put("uniqueVisitors", e.getValue().getOrDefault("uniqueVisitors", 0L));
+            list.add(m);
+        }
+        list.sort((a, b) -> Long.compare((Long)b.get("clicks"), (Long)a.get("clicks")));
+        return java.util.Map.of(
+                "username", username,
+                "period", days + " days",
+                "devices", list
         );
     }
 }

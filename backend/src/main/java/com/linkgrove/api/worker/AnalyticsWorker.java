@@ -6,6 +6,7 @@ import com.linkgrove.api.model.Link;
 import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
 import com.linkgrove.api.repository.LinkReferrerDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkDeviceDailyAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -28,6 +29,7 @@ public class AnalyticsWorker {
     private final LinkRepository linkRepository;
     private final LinkClickDailyAggregateRepository aggregateRepository;
     private final LinkReferrerDailyAggregateRepository referrerAggregateRepository;
+    private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     /**
@@ -97,6 +99,18 @@ public class AnalyticsWorker {
                     if (addedR != null && addedR > 0) {
                         referrerAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, domain);
                     }
+                }
+            }
+
+            // Device aggregation (simple UA classifier)
+            String device = classifyDevice(event.getUserAgent());
+            deviceAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day, device);
+            if (visitorId != null) {
+                String dKey = String.format("uvd:%s:%d:%s:%s", event.getUsername(), event.getLinkId(), day, device);
+                Long addedD = redisTemplate.opsForSet().add(dKey, visitorId);
+                redisTemplate.expire(dKey, java.time.Duration.ofDays(40));
+                if (addedD != null && addedD > 0) {
+                    deviceAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, device);
                 }
             }
             
@@ -179,5 +193,14 @@ public class AnalyticsWorker {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String classifyDevice(String ua) {
+        if (ua == null) return "other";
+        String s = ua.toLowerCase();
+        if (s.contains("tablet") || s.contains("ipad")) return "tablet";
+        if (s.contains("mobi") || s.contains("iphone") || s.contains("android")) return "mobile";
+        if (s.contains("windows") || s.contains("macintosh") || s.contains("linux")) return "desktop";
+        return "other";
     }
 }

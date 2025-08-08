@@ -23,6 +23,7 @@ import java.net.URI;
 public class RedirectController {
 
     private final LinkRedirectService linkRedirectService;
+    private final com.linkgrove.api.service.RateLimitService rateLimitService;
 
     /**
      * Redirect endpoint that handles link clicks with lightning-fast performance.
@@ -40,7 +41,9 @@ public class RedirectController {
     public ResponseEntity<Void> redirectToLink(
             @PathVariable Long linkId,
             HttpServletRequest request) {
-        
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, 300, java.time.Duration.ofMinutes(1));
         String targetUrl = linkRedirectService.getRedirectUrl(linkId);
         
         // Publish click event asynchronously (fire-and-forget)
@@ -55,6 +58,10 @@ public class RedirectController {
         
         log.debug("Redirecting link {} to {}", linkId, targetUrl);
         
+        if (!rl.allowed()) {
+            headers.add("Retry-After", String.valueOf(rl.retryAfterSeconds()));
+        }
+        headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
@@ -62,7 +69,9 @@ public class RedirectController {
     public ResponseEntity<Void> redirectToAlias(
             @PathVariable String alias,
             HttpServletRequest request) {
-
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+        var rl = rateLimitService.checkAndUpdate("redir:" + clientIp, 300, java.time.Duration.ofMinutes(1));
         var link = linkRedirectService.getLinkByAlias(alias);
         String targetUrl = link.getUrl();
 
@@ -73,6 +82,10 @@ public class RedirectController {
         headers.setLocation(URI.create(targetUrl));
         headers.add("Cache-Control", "public, max-age=300");
         log.debug("Redirecting alias {} to {} (id {})", alias, targetUrl, link.getId());
+        if (!rl.allowed()) {
+            headers.add("Retry-After", String.valueOf(rl.retryAfterSeconds()));
+        }
+        headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 

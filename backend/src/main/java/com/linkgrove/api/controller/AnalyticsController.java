@@ -72,6 +72,13 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getReferrerBreakdown(username, days));
     }
 
+    @GetMapping("/devices")
+    public ResponseEntity<?> getDeviceBreakdown(Authentication authentication,
+                                                @RequestParam(defaultValue = "7") int days) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(analyticsService.getDeviceBreakdown(username, days));
+    }
+
     @GetMapping(value = "/export/timeseries", produces = "text/csv")
     public ResponseEntity<String> exportTimeseriesCsv(Authentication authentication,
                                                       @RequestParam(defaultValue = "7") int days) {
