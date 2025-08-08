@@ -53,6 +53,8 @@ public class LinkService {
                 .displayOrder(nextOrder)
                 .isActive(true)
                 .clickCount(0L)
+                .startAt(request.getStartAt())
+                .endAt(request.getEndAt())
                 .build();
 
         if (request.getAlias() != null && !request.getAlias().isBlank()) {
@@ -126,6 +128,8 @@ public class LinkService {
         link.setTitle(request.getTitle());
         link.setUrl(request.getUrl());
         link.setDescription(request.getDescription());
+        link.setStartAt(request.getStartAt());
+        link.setEndAt(request.getEndAt());
         
         if (request.getIsActive() != null) {
             link.setIsActive(request.getIsActive());
@@ -197,7 +201,9 @@ public class LinkService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Link> activeLinks = linkRepository.findActiveLinksForPublicProfile(username);
+        List<Link> activeLinks = linkRepository.findActiveLinksForPublicProfile(username).stream()
+                .filter(this::isWithinSchedule)
+                .collect(Collectors.toList());
 
         List<PublicProfileResponse.PublicLinkResponse> linkResponses = activeLinks.stream()
                 .map(link -> PublicProfileResponse.PublicLinkResponse.builder()
@@ -243,6 +249,13 @@ public class LinkService {
         linkRepository.save(link);
     }
 
+    private boolean isWithinSchedule(Link link) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
+        if (link.getStartAt() != null && now.isBefore(link.getStartAt())) return false;
+        if (link.getEndAt() != null && now.isAfter(link.getEndAt())) return false;
+        return true;
+    }
+
     private LinkResponse mapToLinkResponse(Link link) {
         return LinkResponse.builder()
                 .id(link.getId())
@@ -255,6 +268,8 @@ public class LinkService {
                 .createdAt(link.getCreatedAt())
                 .updatedAt(link.getUpdatedAt())
                 .alias(link.getAlias())
+                .startAt(link.getStartAt())
+                .endAt(link.getEndAt())
                 .build();
     }
 }

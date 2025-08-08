@@ -12,10 +12,10 @@ import client from '../api/client';
 
 const LinkManager = () => {
   const [links, setLinks] = useState([]);
-  const [form, setForm] = useState({ title: '', url: '', description: '', alias: '' });
+  const [form, setForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // id being edited
-  const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '' });
+  const [editForm, setEditForm] = useState({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
   const [dragIndex, setDragIndex] = useState(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
@@ -59,8 +59,12 @@ const LinkManager = () => {
     if (!canCreate) return;
     setLoading(true);
     try {
-      await client.post('/links', form);
-      setForm({ title: '', url: '', description: '', alias: '' });
+      const payload = { ...form };
+      // Convert local datetime (yyyy-MM-ddTHH:mm) to ISO if set
+      if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString();
+      if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
+      await client.post('/links', payload);
+      setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '' });
       await load();
     } finally {
       setLoading(false);
@@ -74,11 +78,21 @@ const LinkManager = () => {
 
   const beginEdit = (link) => {
     setEditing(link.id);
-    setEditForm({ title: link.title || '', url: link.url || '', description: link.description || '', alias: link.alias || '' });
+    setEditForm({
+      title: link.title || '',
+      url: link.url || '',
+      description: link.description || '',
+      alias: link.alias || '',
+      startAt: link.startAt ? link.startAt.slice(0,16) : '',
+      endAt: link.endAt ? link.endAt.slice(0,16) : '',
+    });
   };
 
   const saveEdit = async (id) => {
-    await client.put(`/links/${id}`, editForm);
+    const payload = { ...editForm };
+    if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString();
+    if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
+    await client.put(`/links/${id}`, payload);
     setEditing(null);
     await load();
   };
@@ -149,6 +163,8 @@ const LinkManager = () => {
             <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
             <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" />
+            <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
+            <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
             <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
@@ -190,6 +206,8 @@ const LinkManager = () => {
                         <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                         <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" />
+                        <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} />
+                        <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} />
                       </Stack>
                     ) : (
                       <>
@@ -205,6 +223,12 @@ const LinkManager = () => {
                         ) : null}
                         {l.alias ? (
                           <Typography variant="body2" color="text.secondary" noWrap>Alias: {l.alias}</Typography>
+                        ) : null}
+                        {(l.startAt || l.endAt) ? (
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {l.startAt ? `From ${new Date(l.startAt).toLocaleString()}` : 'From any time'}
+                            {l.endAt ? ` to ${new Date(l.endAt).toLocaleString()}` : ''}
+                          </Typography>
                         ) : null}
                         <FormControlLabel
                           control={<Switch checked={!!l.isActive} onChange={() => toggleActive(l)} size="small" />}

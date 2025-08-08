@@ -45,7 +45,7 @@ public class LinkRedirectService {
         Link link = linkRepository.findById(linkId)
                 .orElseThrow(() -> new LinkNotFoundException(linkId));
         
-        if (!link.getIsActive()) {
+        if (!link.getIsActive() || isOutsideSchedule(link)) {
             throw new LinkNotFoundException("Link is inactive: " + linkId);
         }
         
@@ -57,10 +57,17 @@ public class LinkRedirectService {
     public Link getLinkByAlias(String alias) {
         Link link = linkRepository.findByAlias(alias)
                 .orElseThrow(() -> new LinkNotFoundException("Alias not found: " + alias));
-        if (!link.getIsActive()) {
+        if (!link.getIsActive() || isOutsideSchedule(link)) {
             throw new LinkNotFoundException("Link is inactive for alias: " + alias);
         }
         return link;
+    }
+
+    private boolean isOutsideSchedule(Link link) {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
+        if (link.getStartAt() != null && now.isBefore(link.getStartAt())) return true;
+        if (link.getEndAt() != null && now.isAfter(link.getEndAt())) return true;
+        return false;
     }
 
     /**

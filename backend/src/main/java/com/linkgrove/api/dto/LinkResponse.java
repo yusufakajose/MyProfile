@@ -23,4 +23,6 @@ public class LinkResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String alias;
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 }

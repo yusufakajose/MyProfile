@@ -44,6 +44,12 @@ public class Link {
     @Column(name = "alias", unique = true, length = 100)
     private String alias;
 
+    @Column(name = "start_at")
+    private LocalDateTime startAt;
+
+    @Column(name = "end_at")
+    private LocalDateTime endAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
