@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface WebhookDeliveryRepository extends JpaRepository<WebhookDelivery, Long> {
     List<WebhookDelivery> findTop20ByUserOrderByCreatedAtDesc(User user);
+    List<WebhookDelivery> findTop50ByUserAndStatusCodeLessThanOrderByCreatedAtDesc(User user, int statusCodeThreshold);
 }
 
 

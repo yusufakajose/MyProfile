@@ -41,6 +41,10 @@ public class WebhookDelivery {
 
     @Column(length = 500)
     private String errorMessage;
+
+    @Lob
+    @Column(name = "payload", columnDefinition = "TEXT")
+    private String payload; // original JSON payload
 }
 
 

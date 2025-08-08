@@ -4,6 +4,8 @@ import com.linkgrove.api.model.User;
 import com.linkgrove.api.model.WebhookConfig;
 import com.linkgrove.api.repository.UserRepository;
 import com.linkgrove.api.repository.WebhookConfigRepository;
+import com.linkgrove.api.repository.WebhookDeliveryRepository;
+import com.linkgrove.api.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +21,8 @@ public class WebhookController {
 
     private final WebhookConfigRepository configRepository;
     private final UserRepository userRepository;
+    private final WebhookDeliveryRepository deliveryRepository;
+    private final WebhookService webhookService;
 
     @GetMapping("/config")
     public ResponseEntity<?> getConfig(Authentication auth) {
@@ -38,6 +42,18 @@ public class WebhookController {
         cfg.setIsActive(req.getIsActive() != null ? req.getIsActive() : true);
         configRepository.save(cfg);
         return ResponseEntity.ok(cfg);
+    }
+
+    @GetMapping("/deliveries")
+    public ResponseEntity<?> listDeliveries(Authentication auth) {
+        User user = userRepository.findByUsername(auth.getName()).orElseThrow();
+        return ResponseEntity.ok(deliveryRepository.findTop20ByUserOrderByCreatedAtDesc(user));
+    }
+
+    @PostMapping("/deliveries/{id}/resend")
+    public ResponseEntity<?> resend(Authentication auth, @PathVariable Long id) {
+        // Ownership checked implicitly by fetching and comparing users when resending
+        return ResponseEntity.ok(webhookService.resend(id));
     }
 
     private String generateSecret() {

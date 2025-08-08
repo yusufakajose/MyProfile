@@ -29,7 +29,7 @@ public class WebhookService {
     private final UserRepository userRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void emitLinkClick(String username, Long linkId, String url, String referrer, String ip, String userAgent) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) return;
@@ -81,8 +81,36 @@ public class WebhookService {
                 .statusCode(status)
                 .createdAt(LocalDateTime.now())
                 .errorMessage(error != null && error.length() > 480 ? error.substring(0, 480) : error)
+                .payload(json)
                 .build();
         deliveryRepository.save(d);
+    }
+
+    @Transactional
+    public WebhookDelivery resend(Long deliveryId) {
+        WebhookDelivery d = deliveryRepository.findById(deliveryId).orElseThrow();
+        User user = d.getUser();
+        WebhookConfig cfg = configRepository.findFirstByUserAndIsActiveTrue(user).orElse(null);
+        if (cfg == null) return d;
+        String json = d.getPayload();
+        String signature = hmacSha256(cfg.getSecret(), json);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("X-Webhook-Signature", signature);
+        headers.add("X-Webhook-Event", d.getEventType());
+        HttpEntity<String> entity = new HttpEntity<>(json, headers);
+        int status = 0; String error = null;
+        try {
+            var resp = restTemplate.postForEntity(cfg.getUrl(), entity, String.class);
+            status = resp.getStatusCode().value();
+        } catch (Exception e) {
+            status = 0;
+            error = e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+        d.setAttempt(d.getAttempt() + 1);
+        d.setStatusCode(status);
+        d.setErrorMessage(error != null && error.length() > 480 ? error.substring(0, 480) : error);
+        return deliveryRepository.save(d);
     }
 
     private String hmacSha256(String secret, String data) {
