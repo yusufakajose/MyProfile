@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Container, Box } from '@mui/material';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import Header from './components/Header';
@@ -13,12 +13,15 @@ import WebhookSettings from './components/WebhookSettings';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
+  const location = useLocation();
+  const isPublicRoute = location.pathname.startsWith('/u/');
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
-      <Header />
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        <AuthProvider>
-          <Routes>
+      <AuthProvider>
+        {!isPublicRoute && <Header />}
+        {!isPublicRoute ? (
+          <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+            <Routes>
             <Route
               path="/"
               element={
@@ -61,10 +64,14 @@ function App() {
             />
             <Route path="/member-login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            </Routes>
+          </Container>
+        ) : (
+          <Routes>
             <Route path="/u/:username" element={<PublicProfile />} />
           </Routes>
-        </AuthProvider>
-      </Container>
+        )}
+      </AuthProvider>
     </Box>
   );
 }
