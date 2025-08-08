@@ -19,9 +19,26 @@ public class PublicController {
     private final RateLimitService rateLimitService;
 
     @GetMapping("/{username}")
-    public ResponseEntity<PublicProfileResponse> getPublicProfile(@PathVariable String username) {
-        PublicProfileResponse profile = linkService.getPublicProfile(username);
-        return ResponseEntity.ok(profile);
+    public ResponseEntity<PublicProfileResponse> getPublicProfile(@PathVariable String username, HttpServletRequest request) {
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+        int limit = 120; // 120/min per IP for profile fetches
+        java.time.Duration window = java.time.Duration.ofMinutes(1);
+        var rl = rateLimitService.checkAndUpdate("pubprofile:" + clientIp, limit, window);
+        try {
+            PublicProfileResponse profile = linkService.getPublicProfile(username);
+            return ResponseEntity.ok()
+                    .header("X-RateLimit-Limit", String.valueOf(limit))
+                    .header("X-RateLimit-Window", String.valueOf(window.toSeconds()))
+                    .header("X-RateLimit-Remaining", String.valueOf(rl.remaining()))
+                    .body(profile);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404)
+                    .header("X-RateLimit-Limit", String.valueOf(limit))
+                    .header("X-RateLimit-Window", String.valueOf(window.toSeconds()))
+                    .header("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())))
+                    .build();
+        }
     }
 
     @PostMapping("/click/{linkId}")

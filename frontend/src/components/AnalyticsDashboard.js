@@ -43,6 +43,8 @@ const AnalyticsDashboard = () => {
   const [summaryData, setSummaryData] = useState(null);
   const [timeseriesData, setTimeseriesData] = useState(null);
   const [topLinksData, setTopLinksData] = useState(null);
+  const [referrersData, setReferrersData] = useState(null);
+  const [devicesData, setDevicesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState(7);
@@ -58,15 +60,19 @@ const AnalyticsDashboard = () => {
     setError(null);
     
     try {
-      const [summaryRes, timeseriesRes, topLinksRes] = await Promise.all([
+      const [summaryRes, timeseriesRes, topLinksRes, referrersRes, devicesRes] = await Promise.all([
         client.get('/analytics/dashboard/summary'),
         client.get(`/analytics/dashboard/timeseries?days=${timeRange}`),
-        client.get('/analytics/top-links')
+        client.get('/analytics/top-links'),
+        client.get(`/analytics/referrers?days=${timeRange}`),
+        client.get(`/analytics/devices?days=${timeRange}`)
       ]);
 
       setSummaryData(summaryRes.data);
       setTimeseriesData(timeseriesRes.data);
       setTopLinksData(topLinksRes.data);
+      setReferrersData(referrersRes.data);
+      setDevicesData(devicesRes.data);
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       setError('Failed to load analytics data. Please try again.');
@@ -334,6 +340,80 @@ const AnalyticsDashboard = () => {
                 <Bar dataKey="clickCount" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
+          </Paper>
+        </Grid>
+
+        {/* Referrers Table */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="h6">Top Referrers</Typography>
+              <Button size="small" onClick={() => downloadCsv(
+                `/analytics/export/referrers?days=${timeRange}`,
+                `analytics_referrers_${timeRange}d.csv`,
+                (referrersData?.referrers || []),
+                [
+                  ['referrerDomain', r => r.referrerDomain],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]
+              )}>Export CSV</Button>
+            </Box>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Referrer</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {(referrersData?.referrers || []).slice(0, 10).map((r, i) => (
+                  <Box component="tr" key={i}>
+                    <Box component="td" sx={{ py: 0.5 }}>{r.referrerDomain}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Devices Table */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="h6">Devices</Typography>
+              <Button size="small" onClick={() => downloadCsv(
+                `/analytics/export/devices?days=${timeRange}`,
+                `analytics_devices_${timeRange}d.csv`,
+                (devicesData?.devices || []),
+                [
+                  ['deviceType', r => r.deviceType],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]
+              )}>Export CSV</Button>
+            </Box>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Device</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {(devicesData?.devices || []).map((r, i) => (
+                  <Box component="tr" key={i}>
+                    <Box component="td" sx={{ py: 0.5 }}>{r.deviceType}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
           </Paper>
         </Grid>
 

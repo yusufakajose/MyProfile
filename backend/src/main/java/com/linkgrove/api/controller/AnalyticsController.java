@@ -79,6 +79,52 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getDeviceBreakdown(username, days));
     }
 
+    @GetMapping(value = "/export/referrers", produces = "text/csv")
+    public ResponseEntity<String> exportReferrersCsv(Authentication authentication,
+                                                     @RequestParam(defaultValue = "7") int days) {
+        String username = authentication.getName();
+        Map<String, Object> data = analyticsService.getReferrerBreakdown(username, days);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) data.get("referrers");
+        StringBuilder sb = new StringBuilder();
+        sb.append("referrerDomain,clicks,uniqueVisitors\n");
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                String ref = String.valueOf(row.getOrDefault("referrerDomain", ""));
+                String clicks = String.valueOf(row.getOrDefault("clicks", 0));
+                String uniques = String.valueOf(row.getOrDefault("uniqueVisitors", 0));
+                sb.append(escapeCsv(ref)).append(',').append(clicks).append(',').append(uniques).append('\n');
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=analytics_referrers_" + days + "d_" + username + ".csv");
+        return ResponseEntity.ok().headers(headers).body(sb.toString());
+    }
+
+    @GetMapping(value = "/export/devices", produces = "text/csv")
+    public ResponseEntity<String> exportDevicesCsv(Authentication authentication,
+                                                   @RequestParam(defaultValue = "7") int days) {
+        String username = authentication.getName();
+        Map<String, Object> data = analyticsService.getDeviceBreakdown(username, days);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) data.get("devices");
+        StringBuilder sb = new StringBuilder();
+        sb.append("deviceType,clicks,uniqueVisitors\n");
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                String dev = String.valueOf(row.getOrDefault("deviceType", ""));
+                String clicks = String.valueOf(row.getOrDefault("clicks", 0));
+                String uniques = String.valueOf(row.getOrDefault("uniqueVisitors", 0));
+                sb.append(escapeCsv(dev)).append(',').append(clicks).append(',').append(uniques).append('\n');
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=analytics_devices_" + days + "d_" + username + ".csv");
+        return ResponseEntity.ok().headers(headers).body(sb.toString());
+    }
+
     @GetMapping(value = "/export/timeseries", produces = "text/csv")
     public ResponseEntity<String> exportTimeseriesCsv(Authentication authentication,
                                                       @RequestParam(defaultValue = "7") int days) {
