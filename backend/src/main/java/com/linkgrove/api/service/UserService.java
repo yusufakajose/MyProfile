@@ -2,6 +2,9 @@ package com.linkgrove.api.service;
 
 import com.linkgrove.api.dto.ProfileResponse;
 import com.linkgrove.api.dto.UpdateProfileRequest;
+import com.linkgrove.api.dto.UpdateUsernameRequest;
+import com.linkgrove.api.dto.UpdateUsernameResponse;
+import com.linkgrove.api.util.JwtUtil;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(String username) {
@@ -70,6 +74,26 @@ public class UserService {
                 .themeBackgroundColor(saved.getThemeBackgroundColor())
                 .themeTextColor(saved.getThemeTextColor())
                 .build();
+    }
+
+    @Transactional
+    public UpdateUsernameResponse updateUsername(String currentUsername, UpdateUsernameRequest request) {
+        String desired = request.getNewUsername();
+        if (desired == null || desired.isBlank()) {
+            throw new RuntimeException("New username required");
+        }
+        if (userRepository.findByUsername(desired).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setUsername(desired);
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(user.getUsername());
+        return new UpdateUsernameResponse(token, user.getUsername());
     }
 }
 

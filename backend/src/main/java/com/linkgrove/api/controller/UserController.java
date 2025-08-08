@@ -2,6 +2,8 @@ package com.linkgrove.api.controller;
 
 import com.linkgrove.api.dto.ProfileResponse;
 import com.linkgrove.api.dto.UpdateProfileRequest;
+import com.linkgrove.api.dto.UpdateUsernameRequest;
+import com.linkgrove.api.dto.UpdateUsernameResponse;
 import com.linkgrove.api.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +32,14 @@ public class UserController {
     ) {
         ProfileResponse updated = userService.updateProfile(authentication.getName(), request);
         return ResponseEntity.ok(updated);
+    }
+
+    @PutMapping("/username")
+    public ResponseEntity<UpdateUsernameResponse> updateUsername(
+            Authentication authentication,
+            @Valid @RequestBody UpdateUsernameRequest request
+    ) {
+        UpdateUsernameResponse response = userService.updateUsername(authentication.getName(), request);
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Card, CardContent, TextField, Button, Typography, Alert, Stack, Avatar } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
 
 const ProfileSettings = () => {
@@ -9,6 +10,8 @@ const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [username, setUsername] = useState('');
+  const { login, user: authUser, token } = useAuth();
   const [themePrimaryColor, setThemePrimaryColor] = useState('');
   const [themeAccentColor, setThemeAccentColor] = useState('');
   const [themeBackgroundColor, setThemeBackgroundColor] = useState('');
@@ -23,6 +26,7 @@ const ProfileSettings = () => {
         setDisplayName(res.data.displayName || '');
         setBio(res.data.bio || '');
         setProfileImageUrl(res.data.profileImageUrl || '');
+        setUsername(res.data.username || authUser?.username || '');
         setThemePrimaryColor(res.data.themePrimaryColor || '');
         setThemeAccentColor(res.data.themeAccentColor || '');
         setThemeBackgroundColor(res.data.themeBackgroundColor || '');
@@ -58,6 +62,23 @@ const ProfileSettings = () => {
     }
   };
 
+  const saveUsername = async () => {
+    if (!username || username === authUser?.username) return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await client.put('/user/username', { newUsername: username });
+      // Refresh auth token and user in context
+      login(res.data.token, { ...(authUser || {}), username: res.data.username });
+      setSuccess('Username updated');
+    } catch (e) {
+      setError(e?.response?.data?.message || 'Failed to update username');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box maxWidth={720} mx="auto">
       <Typography variant="h5" gutterBottom>Profile Settings</Typography>
@@ -66,6 +87,15 @@ const ProfileSettings = () => {
       <Card>
         <CardContent>
           <Stack component="form" spacing={2} onSubmit={save}>
+            <TextField
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              helperText="Public profile url: /u/username"
+            />
+            <Box>
+              <Button variant="outlined" onClick={saveUsername} disabled={loading || !username || username === authUser?.username}>Update Username</Button>
+            </Box>
             <Box display="flex" alignItems="center" gap={2}>
               <Avatar src={profileImageUrl || undefined} sx={{ width: 64, height: 64 }} />
               <TextField

@@ -154,7 +154,7 @@ const LinkManager = () => {
             <Card sx={{ cursor: 'grab' }}>
               <CardContent>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-                  <Box sx={{ flex: 1, pr: 1 }}>
+                      <Box sx={{ flex: 1, pr: 1 }}>
                     {editing === l.id ? (
                       <Stack spacing={1}>
                         <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
@@ -163,7 +163,12 @@ const LinkManager = () => {
                       </Stack>
                     ) : (
                       <>
-                        <Typography variant="subtitle1">{l.title}</Typography>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography variant="subtitle1">{l.title}</Typography>
+                          {typeof l.clickCount === 'number' && (
+                            <Typography variant="caption" color="text.secondary">{l.clickCount} clicks</Typography>
+                          )}
+                        </Stack>
                         <Typography variant="body2" color="text.secondary" noWrap>{l.url}</Typography>
                         {l.description ? (
                           <Typography variant="body2" color="text.secondary" noWrap>{l.description}</Typography>
