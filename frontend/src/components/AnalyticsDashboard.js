@@ -11,7 +11,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Paper
+  Paper,
+  Button
 } from '@mui/material';
 import {
   LineChart,
@@ -72,6 +73,15 @@ const AnalyticsDashboard = () => {
     }
   };
 
+  const downloadCsv = (path) => {
+    const link = document.createElement('a');
+    link.href = `${client.defaults.baseURL}${path}`;
+    link.setAttribute('download', 'analytics.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -107,6 +117,10 @@ const AnalyticsDashboard = () => {
             <MenuItem value={30}>Last 30 days</MenuItem>
           </Select>
         </FormControl>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" onClick={() => downloadCsv(`/analytics/export/timeseries?days=${timeRange}`)}>Export Timeseries CSV</Button>
+          <Button variant="outlined" onClick={() => downloadCsv(`/analytics/export/top-links`)}>Export Top Links CSV</Button>
+        </Box>
       </Box>
 
       {/* Summary Cards */}
