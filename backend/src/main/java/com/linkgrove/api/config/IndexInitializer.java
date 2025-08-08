@@ -39,7 +39,11 @@ public class IndexInitializer implements ApplicationRunner {
                 // Daily aggregates
                 "CREATE INDEX IF NOT EXISTS idx_click_user_day ON link_click_daily_aggregate(username, day)",
                 "CREATE INDEX IF NOT EXISTS idx_ref_user_day ON link_referrer_daily_aggregate(username, day)",
-                "CREATE INDEX IF NOT EXISTS idx_dev_user_day ON link_device_daily_aggregate(username, day)"
+                "CREATE INDEX IF NOT EXISTS idx_dev_user_day ON link_device_daily_aggregate(username, day)",
+
+                // Webhook deliveries
+                "CREATE INDEX IF NOT EXISTS idx_webhook_retry_due ON webhook_deliveries(next_attempt_at)",
+                "CREATE INDEX IF NOT EXISTS idx_webhook_user_dlq ON webhook_deliveries(user_id, dead_lettered)"
         );
 
         for (String sql : statements) {

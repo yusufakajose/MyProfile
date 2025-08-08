@@ -45,6 +45,12 @@ public class WebhookDelivery {
     @Lob
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload; // original JSON payload
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
+
+    @Column(name = "dead_lettered", nullable = false)
+    private Boolean deadLettered;
 }
 
 

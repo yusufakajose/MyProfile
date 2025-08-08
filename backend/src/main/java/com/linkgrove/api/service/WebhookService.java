@@ -82,6 +82,8 @@ public class WebhookService {
                 .createdAt(LocalDateTime.now())
                 .errorMessage(error != null && error.length() > 480 ? error.substring(0, 480) : error)
                 .payload(json)
+                .deadLettered(false)
+                .nextAttemptAt(computeNextAttemptAt(status, 1))
                 .build();
         deliveryRepository.save(d);
     }
@@ -110,6 +112,9 @@ public class WebhookService {
         d.setAttempt(d.getAttempt() + 1);
         d.setStatusCode(status);
         d.setErrorMessage(error != null && error.length() > 480 ? error.substring(0, 480) : error);
+        int attempt = d.getAttempt() != null ? d.getAttempt() : 1;
+        d.setDeadLettered(shouldDeadLetter(status, attempt));
+        d.setNextAttemptAt(d.getDeadLettered() ? null : computeNextAttemptAt(status, attempt));
         return deliveryRepository.save(d);
     }
 
@@ -125,6 +130,24 @@ public class WebhookService {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private LocalDateTime computeNextAttemptAt(int statusCode, int attempt) {
+        // Only retry on network errors (0) and 5xx
+        boolean retryable = statusCode == 0 || (statusCode >= 500 && statusCode < 600);
+        if (!retryable) return null;
+        long baseSeconds = 15; // start 15s, then 30s, 60s, 120s, capped
+        long delay = baseSeconds * (1L << Math.min(5, Math.max(0, attempt - 1))); // cap shift at 5
+        if (delay > 1800) delay = 1800; // cap 30m
+        return LocalDateTime.now().plusSeconds(delay);
+    }
+
+    private boolean shouldDeadLetter(int statusCode, int attempt) {
+        if (!(statusCode == 0 || (statusCode >= 500 && statusCode < 600))) {
+            return false; // non-retryable, but considered final success/failure without DLQ
+        }
+        int maxAttempts = 6;
+        return attempt >= maxAttempts;
     }
 }
 

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SecureRandom;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/webhooks")
@@ -54,6 +55,24 @@ public class WebhookController {
     public ResponseEntity<?> resend(Authentication auth, @PathVariable Long id) {
         // Ownership checked implicitly by fetching and comparing users when resending
         return ResponseEntity.ok(webhookService.resend(id));
+    }
+
+    @GetMapping("/deliveries/dlq")
+    public ResponseEntity<?> listDeadLetter(Authentication auth) {
+        User user = userRepository.findByUsername(auth.getName()).orElseThrow();
+        return ResponseEntity.ok(deliveryRepository.findTop50ByUserAndDeadLetteredTrueOrderByCreatedAtDesc(user));
+    }
+
+    @PostMapping("/deliveries/resend-all-dlq")
+    public ResponseEntity<?> resendAllDlq(Authentication auth) {
+        User user = userRepository.findByUsername(auth.getName()).orElseThrow();
+        var list = deliveryRepository.findTop50ByUserAndDeadLetteredTrueOrderByCreatedAtDesc(user);
+        int ok = 0;
+        for (var d : list) {
+            webhookService.resend(d.getId());
+            ok++;
+        }
+        return ResponseEntity.ok(Map.of("resendCount", ok));
     }
 
     private String generateSecret() {
