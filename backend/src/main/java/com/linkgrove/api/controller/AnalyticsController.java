@@ -56,6 +56,15 @@ public class AnalyticsController {
         return ResponseEntity.ok(timeseries);
     }
 
+    @GetMapping("/dashboard/timeseries/by-link")
+    public ResponseEntity<?> getTimeseriesDataByLink(Authentication authentication,
+                                                     @RequestParam Long linkId,
+                                                     @RequestParam(defaultValue = "7") int days) {
+        String username = authentication.getName();
+        Map<String, Object> timeseries = analyticsService.getLinkTimeseriesData(username, linkId, days);
+        return ResponseEntity.ok(timeseries);
+    }
+
     @GetMapping(value = "/export/timeseries", produces = "text/csv")
     public ResponseEntity<String> exportTimeseriesCsv(Authentication authentication,
                                                       @RequestParam(defaultValue = "7") int days) {

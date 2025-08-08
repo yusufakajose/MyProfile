@@ -23,4 +23,10 @@ public interface LinkClickDailyAggregateRepository extends JpaRepository<LinkCli
     List<LinkClickDailyAggregate> findRange(@Param("username") String username,
                                             @Param("start") LocalDate start,
                                             @Param("end") LocalDate end);
+
+    @Query("SELECT a FROM LinkClickDailyAggregate a WHERE a.username = :username AND a.link.id = :linkId AND a.day BETWEEN :start AND :end")
+    List<LinkClickDailyAggregate> findRangeForLink(@Param("username") String username,
+                                                   @Param("linkId") Long linkId,
+                                                   @Param("start") LocalDate start,
+                                                   @Param("end") LocalDate end);
 }

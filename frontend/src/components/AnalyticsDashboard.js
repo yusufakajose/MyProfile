@@ -80,11 +80,12 @@ const AnalyticsDashboard = () => {
       setPerLinkSeries(null);
       if (!selectedLinkId) return;
       try {
-        const res = await client.get(`/analytics/dashboard/timeseries?days=${timeRange}`);
+        const res = await client.get(`/analytics/dashboard/timeseries/by-link?linkId=${selectedLinkId}&days=${timeRange}`);
         const all = res.data?.timeseriesData || [];
-        // Simple client-only mock breakdown per-link is not available; keep total for now
         setPerLinkSeries(all);
-      } catch {}
+      } catch (e) {
+        console.error('Failed to load per-link timeseries', e);
+      }
     };
     loadPerLink();
   }, [selectedLinkId, timeRange]);

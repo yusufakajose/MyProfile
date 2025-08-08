@@ -199,4 +199,50 @@ public class AnalyticsService {
 
         return result;
     }
+
+    @Cacheable(value = "analytics", key = "#username + '_link_' + #linkId + '_timeseries_' + #days")
+    @Transactional(readOnly = true)
+    public Map<String, Object> getLinkTimeseriesData(String username, Long linkId, int days) {
+        log.info("Fetching per-link timeseries for user: {}, linkId: {} for last {} days", username, linkId, days);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify link belongs to user
+        Link link = linkRepository.findByIdAndUser(linkId, user)
+                .orElseThrow(() -> new RuntimeException("Link not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var aggregates = aggregateRepository.findRangeForLink(user.getUsername(), link.getId(), start, end);
+        var byDay = new java.util.HashMap<java.time.LocalDate, Long>();
+        for (var a : aggregates) {
+            byDay.merge(a.getDay(), a.getClicks(), Long::sum);
+        }
+
+        java.util.List<java.util.Map<String, Object>> timeseriesData = new java.util.ArrayList<>();
+        long totalClicks = 0;
+        for (java.time.LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            long clicks = byDay.getOrDefault(d, 0L);
+            totalClicks += clicks;
+            java.util.Map<String, Object> dayData = new java.util.HashMap<>();
+            dayData.put("date", d.toString());
+            dayData.put("clicks", clicks);
+            dayData.put("uniqueVisitors", Math.round(clicks * 0.7));
+            timeseriesData.add(dayData);
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("username", username);
+        result.put("linkId", link.getId());
+        result.put("title", link.getTitle());
+        result.put("period", days + " days");
+        result.put("timeseriesData", timeseriesData);
+        result.put("totalClicks", totalClicks);
+        result.put("averageDailyClicks", timeseriesData.isEmpty() ? 0.0 :
+                Math.round((double) totalClicks / timeseriesData.size() * 100.0) / 100.0);
+
+        return result;
+    }
 }
