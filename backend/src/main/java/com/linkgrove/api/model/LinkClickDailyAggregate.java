@@ -32,4 +32,7 @@ public class LinkClickDailyAggregate {
 
     @Column(name = "clicks", nullable = false)
     private long clicks;
+
+    @Column(name = "unique_visitors", nullable = false)
+    private long uniqueVisitors;
 }

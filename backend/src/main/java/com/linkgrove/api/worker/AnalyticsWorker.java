@@ -26,6 +26,7 @@ public class AnalyticsWorker {
 
     private final LinkRepository linkRepository;
     private final LinkClickDailyAggregateRepository aggregateRepository;
+    private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     /**
      * Process link click events from RabbitMQ queue.
@@ -70,6 +71,18 @@ public class AnalyticsWorker {
                     event.getClickedAt().atZone(java.time.ZoneOffset.UTC).toLocalDate() :
                     java.time.LocalDate.now(java.time.ZoneOffset.UTC);
             aggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day);
+
+            // Unique visitor dedup via Redis (per user+link+day+visitor key)
+            String visitorId = deriveVisitorId(event);
+            if (visitorId != null && !visitorId.isBlank()) {
+                String redisKey = String.format("uv:%s:%d:%s", event.getUsername(), event.getLinkId(), day);
+                Long added = redisTemplate.opsForSet().add(redisKey, visitorId);
+                // expire in 40 days to cover late events
+                redisTemplate.expire(redisKey, java.time.Duration.ofDays(40));
+                if (added != null && added > 0) {
+                    aggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day);
+                }
+            }
             
             // Log analytics event for potential future processing
             logAnalyticsEvent(event);
@@ -126,5 +139,17 @@ public class AnalyticsWorker {
         
         // For IPv6 or other formats, just return "masked"
         return "masked";
+    }
+
+    private String deriveVisitorId(LinkClickEvent event) {
+        // Prefer sessionId, fall back to IP + minimal UA hash
+        if (event.getSessionId() != null && !event.getSessionId().isBlank()) {
+            return "s:" + event.getSessionId();
+        }
+        String ip = event.getClientIp();
+        String ua = event.getUserAgent();
+        if (ip == null && ua == null) return null;
+        String uaSig = (ua == null) ? "" : Integer.toHexString(ua.hashCode());
+        return "i:" + (ip != null ? ip : "?") + ":u:" + uaSig;
     }
 }

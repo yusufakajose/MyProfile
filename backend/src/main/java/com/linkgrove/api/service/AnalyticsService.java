@@ -173,8 +173,10 @@ public class AnalyticsService {
 
         var aggregates = aggregateRepository.findRange(user.getUsername(), start, end);
         var byDay = new java.util.HashMap<java.time.LocalDate, Long>();
+        var byDayUnique = new java.util.HashMap<java.time.LocalDate, Long>();
         for (var a : aggregates) {
             byDay.merge(a.getDay(), a.getClicks(), Long::sum);
+            byDayUnique.merge(a.getDay(), a.getUniqueVisitors(), Long::sum);
         }
 
         java.util.List<java.util.Map<String, Object>> timeseriesData = new java.util.ArrayList<>();
@@ -185,7 +187,8 @@ public class AnalyticsService {
             java.util.Map<String, Object> dayData = new java.util.HashMap<>();
             dayData.put("date", d.toString());
             dayData.put("clicks", clicks);
-            dayData.put("uniqueVisitors", Math.round(clicks * 0.7));
+            long uniques = byDayUnique.getOrDefault(d, 0L);
+            dayData.put("uniqueVisitors", uniques);
             timeseriesData.add(dayData);
         }
 
@@ -217,8 +220,10 @@ public class AnalyticsService {
 
         var aggregates = aggregateRepository.findRangeForLink(user.getUsername(), link.getId(), start, end);
         var byDay = new java.util.HashMap<java.time.LocalDate, Long>();
+        var byDayUnique = new java.util.HashMap<java.time.LocalDate, Long>();
         for (var a : aggregates) {
             byDay.merge(a.getDay(), a.getClicks(), Long::sum);
+            byDayUnique.merge(a.getDay(), a.getUniqueVisitors(), Long::sum);
         }
 
         java.util.List<java.util.Map<String, Object>> timeseriesData = new java.util.ArrayList<>();
@@ -229,7 +234,8 @@ public class AnalyticsService {
             java.util.Map<String, Object> dayData = new java.util.HashMap<>();
             dayData.put("date", d.toString());
             dayData.put("clicks", clicks);
-            dayData.put("uniqueVisitors", Math.round(clicks * 0.7));
+            long uniques = byDayUnique.getOrDefault(d, 0L);
+            dayData.put("uniqueVisitors", uniques);
             timeseriesData.add(dayData);
         }
 

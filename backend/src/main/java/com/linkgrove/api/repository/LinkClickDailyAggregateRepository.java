@@ -12,10 +12,16 @@ import java.util.List;
 public interface LinkClickDailyAggregateRepository extends JpaRepository<LinkClickDailyAggregate, Long> {
 
     @Modifying
-    @Query(value = "INSERT INTO link_click_daily_aggregate (username, link_id, day, clicks) " +
-            "VALUES (:username, :linkId, :day, 1) " +
+    @Query(value = "INSERT INTO link_click_daily_aggregate (username, link_id, day, clicks, unique_visitors) " +
+            "VALUES (:username, :linkId, :day, 1, 0) " +
             "ON CONFLICT (username, link_id, day) DO UPDATE SET clicks = link_click_daily_aggregate.clicks + 1", nativeQuery = true)
     void upsertIncrement(@Param("username") String username,
+                         @Param("linkId") Long linkId,
+                         @Param("day") LocalDate day);
+
+    @Modifying
+    @Query(value = "UPDATE link_click_daily_aggregate SET unique_visitors = unique_visitors + 1 WHERE username = :username AND link_id = :linkId AND day = :day", nativeQuery = true)
+    void incrementUnique(@Param("username") String username,
                          @Param("linkId") Long linkId,
                          @Param("day") LocalDate day);
 
