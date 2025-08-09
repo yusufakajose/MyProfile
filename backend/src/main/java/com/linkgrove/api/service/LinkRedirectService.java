@@ -5,6 +5,7 @@ import com.linkgrove.api.event.LinkClickEvent;
 import com.linkgrove.api.exception.LinkNotFoundException;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.repository.LinkRepository;
+import com.linkgrove.api.repository.LinkVariantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -27,6 +28,7 @@ import java.util.Map;
 public class LinkRedirectService {
 
     private final LinkRepository linkRepository;
+    private final LinkVariantRepository linkVariantRepository;
     private final RabbitTemplate rabbitTemplate;
 
     /**
@@ -49,6 +51,23 @@ public class LinkRedirectService {
             throw new LinkNotFoundException("Link is inactive: " + linkId);
         }
         
+        // Weighted variant selection if variants exist
+        var variants = linkVariantRepository.findActiveByLink(link);
+        if (variants != null && !variants.isEmpty()) {
+            int total = variants.stream().mapToInt(v -> Math.max(0, v.getWeight())).sum();
+            if (total > 0) {
+                int r = java.util.concurrent.ThreadLocalRandom.current().nextInt(total);
+                int acc = 0;
+                for (var v : variants) {
+                    acc += Math.max(0, v.getWeight());
+                    if (r < acc) {
+                        // Store chosen variant id in a request-scoped holder for later publishing
+                        com.linkgrove.api.util.RequestContext.setSelectedVariantId(v.getId());
+                        return v.getUrl();
+                    }
+                }
+            }
+        }
         return link.getUrl();
     }
 
@@ -102,6 +121,7 @@ public class LinkRedirectService {
                     .referrer(referrer)
                     .sessionId(sessionId)
                     .targetUrl(targetUrl)
+                    .variantId(com.linkgrove.api.util.RequestContext.getSelectedVariantId())
                     .build();
 
             // Publish to RabbitMQ asynchronously

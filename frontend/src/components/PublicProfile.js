@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -49,9 +49,23 @@ const PublicProfile = () => {
     fetchProfile();
   }, [fetchProfile]);
 
+  const redirectOrigin = useMemo(() => {
+    const base = client.defaults?.baseURL || '';
+    try {
+      const parsed = new URL(base);
+      return parsed.origin;
+    } catch {
+      const origin = window.location.origin || '';
+      return origin.replace(':3000', ':8080');
+    }
+  }, []);
+
+  const shortUrlFor = (link) => link.alias
+    ? `${redirectOrigin}/r/a/${encodeURIComponent(link.alias)}`
+    : `${redirectOrigin}/r/${link.id}`;
+
   const handleLinkClick = async (link) => {
-    client.post(`/public/click/${link.id}`).catch(() => {});
-    window.open(link.url, '_blank', 'noopener,noreferrer');
+    window.open(shortUrlFor(link), '_blank', 'noopener,noreferrer');
   };
 
   if (loading) {

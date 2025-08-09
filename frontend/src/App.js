@@ -4,6 +4,7 @@ import { Container, Box } from '@mui/material';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import Header from './components/Header';
 import PublicProfile from './components/PublicProfile';
+import NotFound from './components/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -64,11 +65,13 @@ function App() {
             />
             <Route path="/member-login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="*" element={<NotFound />} />
             </Routes>
           </Container>
         ) : (
           <Routes>
             <Route path="/u/:username" element={<PublicProfile />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         )}
       </AuthProvider>

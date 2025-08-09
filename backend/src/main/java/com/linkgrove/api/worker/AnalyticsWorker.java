@@ -32,6 +32,7 @@ public class AnalyticsWorker {
     private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
     private final com.linkgrove.api.service.WebhookService webhookService;
+    private final com.linkgrove.api.repository.LinkVariantDailyAggregateRepository variantAggregateRepository;
 
     /**
      * Process link click events from RabbitMQ queue.
@@ -76,6 +77,11 @@ public class AnalyticsWorker {
                     event.getClickedAt().atZone(java.time.ZoneOffset.UTC).toLocalDate() :
                     java.time.LocalDate.now(java.time.ZoneOffset.UTC);
             aggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day);
+            if (event.getVariantId() != null) {
+                variantAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), event.getVariantId(), day);
+            }
+
+            // TODO: variant-level aggregation (future migration)
 
             // Unique visitor dedup via Redis (per user+link+day+visitor key)
             String visitorId = deriveVisitorId(event);
@@ -86,6 +92,9 @@ public class AnalyticsWorker {
                 redisTemplate.expire(redisKey, java.time.Duration.ofDays(40));
                 if (added != null && added > 0) {
                     aggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day);
+                    if (event.getVariantId() != null) {
+                        variantAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), event.getVariantId(), day);
+                    }
                 }
             }
 

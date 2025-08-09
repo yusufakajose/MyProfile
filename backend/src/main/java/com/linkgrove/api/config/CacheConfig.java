@@ -49,6 +49,10 @@ public class CacheConfig {
                     defaultConfig.entryTtl(Duration.ofMinutes(15)))
                 .withCacheConfiguration("analytics", 
                     defaultConfig.entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("analytics-referrers-v1",
+                    defaultConfig.entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("analytics-devices-v1",
+                    defaultConfig.entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration("userLinks", 
                     defaultConfig.entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration("linkRedirects", 

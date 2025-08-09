@@ -12,15 +12,16 @@
 - [x] Referrer/device daily aggregates + APIs
 - [x] Analytics APIs: summary, timeseries, per-link timeseries, top-links, referrers, devices
 - [x] CSV exports: timeseries, top-links, referrers, devices
+- [ ] CSV exports: per-link timeseries and per-link variants (to mirror UI)
 - [x] Rate limiting for public routes with headers (limit/remaining/window, Retry-After) + admin metrics endpoint
 - [x] Programmatic DB indexes at boot (`IndexInitializer`) for links and aggregates
 - [x] Webhooks: config + HMAC-SHA256 signing, delivery logs, resend; scheduled retries with exponential backoff, DLQ listing and resend-all
 - [x] Public profile 404 handling
-- [~] Flyway: disabled for now during active dev; baseline/migrations to be re-enabled
+- [~] Flyway: enabled with baseline; continue adding migrations for new features
 - [ ] Geo analytics (country/region) daily aggregates + APIs + CSV
-- [ ] A/B tests & weighted rotation for links
+- [x] A/B tests & weighted rotation for links (link variants with weights)
 - [ ] Custom domains (starter version: domain mapping + host-based routing)
-- [ ] Observability: structured logs, trace IDs, health/liveness, basic metrics
+- [~] Observability: structured logs + health/metrics done (Actuator + Prometheus); add trace IDs
 - [ ] Testability: Testcontainers integration tests (Postgres+Redis+RabbitMQ), contract tests, smoke tests
 - [ ] Admin UX APIs: webhook failures view, queues, rate-limit overviews beyond raw counters
 

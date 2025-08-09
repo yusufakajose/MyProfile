@@ -8,16 +8,28 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         default_schema: public
   flyway:
-    enabled: false
+    enabled: true
     baseline-on-migrate: true
     baseline-version: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
   cache:
     type: redis
     redis:
@@ -46,7 +58,22 @@ spring:
 
 server:
   port: 8080
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
+        http-only: true
+  http:
+    headers:
+      hsts:
+        max-age: 31536000
+        include-sub-domains: true
+        preload: true
 
 jwt:
-  secret: linkgroveSecretKeyForJWTTokenGeneration2024
+  secret: ${JWT_SECRET:linkgroveSecretKeyForJWTTokenGeneration2024}
   expiration: 86400000
+
+webhooks:
+  maxRetriesPerDestinationPerDay: 100

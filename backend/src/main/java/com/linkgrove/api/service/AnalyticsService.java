@@ -1,12 +1,18 @@
 package com.linkgrove.api.service;
 
+import com.linkgrove.api.dto.DeviceStat;
+import com.linkgrove.api.dto.DevicesResponse;
+import com.linkgrove.api.dto.ReferrerStat;
+import com.linkgrove.api.dto.ReferrersResponse;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
+import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkDeviceDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkVariantDailyAggregateRepository;
+import com.linkgrove.api.repository.LinkVariantRepository;
+import com.linkgrove.api.repository.LinkReferrerDailyAggregateRepository;
 import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.UserRepository;
-import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
-import com.linkgrove.api.repository.LinkReferrerDailyAggregateRepository;
-import com.linkgrove.api.repository.LinkDeviceDailyAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,6 +33,8 @@ public class AnalyticsService {
     private final LinkClickDailyAggregateRepository aggregateRepository;
     private final LinkReferrerDailyAggregateRepository referrerAggregateRepository;
     private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
+    private final LinkVariantDailyAggregateRepository variantAggregateRepository;
+    private final LinkVariantRepository linkVariantRepository;
 
     @Cacheable(value = "analytics", key = "#username + '_overview'")
     @Transactional(readOnly = true)
@@ -256,9 +264,9 @@ public class AnalyticsService {
         return result;
     }
 
-    @Cacheable(value = "analytics", key = "#username + '_referrers_' + #days")
+    @Cacheable(value = "analytics-referrers-v1", key = "#username + ':' + #days")
     @Transactional(readOnly = true)
-    public Map<String, Object> getReferrerBreakdown(String username, int days) {
+    public ReferrersResponse getReferrerBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -272,25 +280,19 @@ public class AnalyticsService {
             m.merge("clicks", r.getClicks(), Long::sum);
             m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
         }
-        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        java.util.List<ReferrerStat> list = new java.util.ArrayList<>();
         for (var e : byRef.entrySet()) {
-            var m = new java.util.HashMap<String, Object>();
-            m.put("referrerDomain", e.getKey());
-            m.put("clicks", e.getValue().getOrDefault("clicks", 0L));
-            m.put("uniqueVisitors", e.getValue().getOrDefault("uniqueVisitors", 0L));
-            list.add(m);
+            long clicks = e.getValue().getOrDefault("clicks", 0L);
+            long uniques = e.getValue().getOrDefault("uniqueVisitors", 0L);
+            list.add(new ReferrerStat(e.getKey(), clicks, uniques));
         }
-        list.sort((a, b) -> Long.compare((Long)b.get("clicks"), (Long)a.get("clicks")));
-        return java.util.Map.of(
-                "username", username,
-                "period", days + " days",
-                "referrers", list
-        );
+        list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
+        return new ReferrersResponse(username, days + " days", list);
     }
 
-    @Cacheable(value = "analytics", key = "#username + '_devices_' + #days")
+    @Cacheable(value = "analytics-devices-v1", key = "#username + ':' + #days")
     @Transactional(readOnly = true)
-    public Map<String, Object> getDeviceBreakdown(String username, int days) {
+    public DevicesResponse getDeviceBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -304,19 +306,96 @@ public class AnalyticsService {
             m.merge("clicks", r.getClicks(), Long::sum);
             m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
         }
-        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        java.util.List<DeviceStat> list = new java.util.ArrayList<>();
         for (var e : byDev.entrySet()) {
-            var m = new java.util.HashMap<String, Object>();
-            m.put("deviceType", e.getKey());
-            m.put("clicks", e.getValue().getOrDefault("clicks", 0L));
-            m.put("uniqueVisitors", e.getValue().getOrDefault("uniqueVisitors", 0L));
-            list.add(m);
+            long clicks = e.getValue().getOrDefault("clicks", 0L);
+            long uniques = e.getValue().getOrDefault("uniqueVisitors", 0L);
+            list.add(new DeviceStat(e.getKey(), clicks, uniques));
         }
-        list.sort((a, b) -> Long.compare((Long)b.get("clicks"), (Long)a.get("clicks")));
-        return java.util.Map.of(
-                "username", username,
-                "period", days + " days",
-                "devices", list
-        );
+        list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
+        return new DevicesResponse(username, days + " days", list);
+    }
+
+    @Cacheable(value = "analytics-variants-v1", key = "#username + ':' + #days")
+    @Transactional(readOnly = true)
+    public Map<String, Object> getVariantBreakdown(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = variantAggregateRepository.findRange(user.getUsername(), start, end);
+        Map<Long, Map<String, Long>> byVariant = new java.util.HashMap<>();
+        for (var r : rows) {
+            Long key = r.getVariant().getId();
+            var m = byVariant.computeIfAbsent(key, k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        // Fetch titles for variants
+        java.util.List<Long> ids = new java.util.ArrayList<>(byVariant.keySet());
+        var variants = linkVariantRepository.findAllById(ids);
+        java.util.Map<Long, String> idToTitle = new java.util.HashMap<>();
+        for (var v : variants) idToTitle.put(v.getId(), v.getTitle());
+
+        java.util.List<Map<String, Object>> list = new java.util.ArrayList<>();
+        for (var e : byVariant.entrySet()) {
+            var v = new java.util.HashMap<String, Object>();
+            v.put("variantId", e.getKey());
+            v.put("variantTitle", idToTitle.getOrDefault(e.getKey(), "(untitled)"));
+            v.put("clicks", e.getValue().getOrDefault("clicks", 0L));
+            v.put("uniqueVisitors", e.getValue().getOrDefault("uniqueVisitors", 0L));
+            list.add(v);
+        }
+        list.sort((a, b) -> Long.compare((Long) b.get("clicks"), (Long) a.get("clicks")));
+        Map<String, Object> res = new java.util.HashMap<>();
+        res.put("username", username);
+        res.put("period", days + " days");
+        res.put("variants", list);
+        return res;
+    }
+
+    @Cacheable(value = "analytics-variants-by-link-v1", key = "#username + ':' + #linkId + ':' + #days")
+    @Transactional(readOnly = true)
+    public Map<String, Object> getVariantBreakdownByLink(String username, Long linkId, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Link link = linkRepository.findByIdAndUser(linkId, user)
+                .orElseThrow(() -> new RuntimeException("Link not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = variantAggregateRepository.findRange(user.getUsername(), start, end);
+        Map<Long, Map<String, Long>> byVariant = new java.util.HashMap<>();
+        for (var r : rows) {
+            if (!r.getLink().getId().equals(link.getId())) continue;
+            Long key = r.getVariant().getId();
+            var m = byVariant.computeIfAbsent(key, k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        java.util.List<Long> ids = new java.util.ArrayList<>(byVariant.keySet());
+        var variants = linkVariantRepository.findAllById(ids);
+        java.util.Map<Long, String> idToTitle = new java.util.HashMap<>();
+        for (var v : variants) idToTitle.put(v.getId(), v.getTitle());
+
+        java.util.List<Map<String, Object>> list = new java.util.ArrayList<>();
+        for (var e : byVariant.entrySet()) {
+            var v = new java.util.HashMap<String, Object>();
+            v.put("variantId", e.getKey());
+            v.put("variantTitle", idToTitle.getOrDefault(e.getKey(), "(untitled)"));
+            v.put("clicks", e.getValue().getOrDefault("clicks", 0L));
+            v.put("uniqueVisitors", e.getValue().getOrDefault("uniqueVisitors", 0L));
+            list.add(v);
+        }
+        list.sort((a, b) -> Long.compare((Long) b.get("clicks"), (Long) a.get("clicks")));
+        Map<String, Object> res = new java.util.HashMap<>();
+        res.put("username", username);
+        res.put("linkId", link.getId());
+        res.put("period", days + " days");
+        res.put("variants", list);
+        return res;
     }
 }

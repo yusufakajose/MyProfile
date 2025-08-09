@@ -59,4 +59,9 @@ public class LinkClickEvent implements Serializable {
      * The target URL that the user was redirected to
      */
     private String targetUrl;
+
+    /**
+     * Selected variant id if A/B variant was used (nullable)
+     */
+    private Long variantId;
 }

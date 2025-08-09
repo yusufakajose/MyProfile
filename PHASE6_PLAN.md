@@ -21,6 +21,12 @@
 - [ ] Add DB indexes for analytics queries (username, day) — validate with `EXPLAIN`
 - [ ] Backfill job to compute aggregates from historical clicks (optional)
 
+#### Exports (planned)
+- [ ] Add CSV export endpoints to mirror per-link analytics views:
+  - `/api/analytics/export/timeseries/by-link?linkId=...&days=...`
+  - `/api/analytics/export/variants/by-link?linkId=...&days=...`
+  - Ensure results match UI tables and include headers; reuse existing service methods.
+
 ### Frontend
 - [ ] Auth flow: login/register UI, token storage, axios interceptor, 401 handling
 - [ ] Gate analytics routes behind auth; redirect unauthenticated users to login

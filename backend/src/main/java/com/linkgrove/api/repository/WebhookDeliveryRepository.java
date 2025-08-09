@@ -16,6 +16,35 @@ public interface WebhookDeliveryRepository extends JpaRepository<WebhookDelivery
     List<WebhookDelivery> findDueRetries(@Param("now") java.time.LocalDateTime now);
 
     List<WebhookDelivery> findTop50ByUserAndDeadLetteredTrueOrderByCreatedAtDesc(User user);
+
+    @Query("select count(d) from WebhookDelivery d")
+    long countAll();
+
+    @Query("select count(d) from WebhookDelivery d where d.statusCode between 200 and 299")
+    long countSuccess();
+
+    @Query("select count(d) from WebhookDelivery d where d.deadLettered = true")
+    long countDeadLettered();
+
+    @Query("select d.targetUrl, count(d) from WebhookDelivery d group by d.targetUrl order by count(d) desc")
+    List<Object[]> countByTargetUrl();
+
+    // Time-bounded metrics
+    @Query("select count(d) from WebhookDelivery d where d.createdAt >= :since")
+    long countAllSince(@Param("since") java.time.LocalDateTime since);
+
+    @Query("select count(d) from WebhookDelivery d where d.statusCode between 200 and 299 and d.createdAt >= :since")
+    long countSuccessSince(@Param("since") java.time.LocalDateTime since);
+
+    @Query("select count(d) from WebhookDelivery d where d.deadLettered = true and d.createdAt >= :since")
+    long countDeadLetteredSince(@Param("since") java.time.LocalDateTime since);
+
+    // DLQ counts per destination
+    @Query("select d.targetUrl, count(d) from WebhookDelivery d where d.deadLettered = true group by d.targetUrl order by count(d) desc")
+    List<Object[]> countDeadLetteredByTargetUrl();
+
+    @Query("select d.targetUrl, count(d) from WebhookDelivery d where d.deadLettered = true and d.createdAt >= :since group by d.targetUrl order by count(d) desc")
+    List<Object[]> countDeadLetteredByTargetUrlSince(@Param("since") java.time.LocalDateTime since);
 }
 
 

@@ -2,12 +2,16 @@ package com.linkgrove.api.controller;
 
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.model.WebhookConfig;
+import com.linkgrove.api.dto.WebhookConfigRequest;
 import com.linkgrove.api.repository.UserRepository;
 import com.linkgrove.api.repository.WebhookConfigRepository;
 import com.linkgrove.api.repository.WebhookDeliveryRepository;
 import com.linkgrove.api.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/webhooks")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Validated
 public class WebhookController {
 
     private final WebhookConfigRepository configRepository;
@@ -32,7 +37,7 @@ public class WebhookController {
     }
 
     @PostMapping("/config")
-    public ResponseEntity<?> upsertConfig(Authentication auth, @RequestBody WebhookConfig req) {
+    public ResponseEntity<?> upsertConfig(Authentication auth, @Valid @RequestBody WebhookConfigRequest req) {
         User user = userRepository.findByUsername(auth.getName()).orElseThrow();
         WebhookConfig cfg = configRepository.findFirstByUserAndIsActiveTrue(user).orElse(null);
         if (cfg == null) {
@@ -52,7 +57,7 @@ public class WebhookController {
     }
 
     @PostMapping("/deliveries/{id}/resend")
-    public ResponseEntity<?> resend(Authentication auth, @PathVariable Long id) {
+    public ResponseEntity<?> resend(Authentication auth, @PathVariable @Min(1) Long id) {
         // Ownership checked implicitly by fetching and comparing users when resending
         return ResponseEntity.ok(webhookService.resend(id));
     }

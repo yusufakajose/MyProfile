@@ -34,26 +34,37 @@ public interface LinkRepository extends JpaRepository<Link, Long> {
     Integer findMaxDisplayOrderForUser(@Param("user") User user);
 
     @Query("SELECT l FROM Link l WHERE l.user = :user AND (" +
-            "LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+            ":q IS NULL OR :q = '' OR LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
             "LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
             "LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%')) )")
     Page<Link> searchUserLinks(@Param("user") User user, @Param("q") String q, Pageable pageable);
 
-    @Query("SELECT DISTINCT l FROM Link l LEFT JOIN l.tags t WHERE l.user = :user " +
+    @Query("SELECT l FROM Link l WHERE l.user = :user " +
             "AND (:q IS NULL OR :q = '' OR LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%'))) " +
-            "AND (:tagNames IS NULL OR SIZE(:tagNames) = 0 OR LOWER(t.name) IN :tagNames) " +
             "AND (:active IS NULL OR l.isActive = :active)")
+    Page<Link> searchUserLinksNoTags(@Param("user") User user,
+                                     @Param("q") String q,
+                                     @Param("active") Boolean active,
+                                     Pageable pageable);
+
+    @Query("SELECT DISTINCT l FROM Link l JOIN l.tags t WHERE l.user = :user " +
+            "AND (:q IS NULL OR :q = '' OR LOWER(l.title) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.url) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(l.description) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+            "AND (:active IS NULL OR l.isActive = :active) " +
+            "AND LOWER(t.name) IN (:tagNames)")
     Page<Link> searchUserLinksWithTags(@Param("user") User user,
                                        @Param("q") String q,
                                        @Param("tagNames") java.util.List<String> tagNames,
                                        @Param("active") Boolean active,
                                        Pageable pageable);
 
-    @Query("SELECT DISTINCT l FROM Link l LEFT JOIN l.tags t WHERE l.user = :user " +
-            "AND (:tagNames IS NULL OR SIZE(:tagNames) = 0 OR LOWER(t.name) IN :tagNames) " +
-            "AND (:active IS NULL OR l.isActive = :active)")
-    Page<Link> findByUserAndTags(@Param("user") User user,
-                                 @Param("tagNames") java.util.List<String> tagNames,
-                                 @Param("active") Boolean active,
-                                 Pageable pageable);
+    @Query("SELECT l FROM Link l WHERE l.user = :user AND (:active IS NULL OR l.isActive = :active)")
+    Page<Link> findByUserNoTags(@Param("user") User user,
+                                @Param("active") Boolean active,
+                                Pageable pageable);
+
+    @Query("SELECT DISTINCT l FROM Link l JOIN l.tags t WHERE l.user = :user AND (:active IS NULL OR l.isActive = :active) AND LOWER(t.name) IN (:tagNames)")
+    Page<Link> findByUserWithTags(@Param("user") User user,
+                                   @Param("tagNames") java.util.List<String> tagNames,
+                                   @Param("active") Boolean active,
+                                   Pageable pageable);
 }

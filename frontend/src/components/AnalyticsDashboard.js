@@ -50,6 +50,8 @@ const AnalyticsDashboard = () => {
   const [timeRange, setTimeRange] = useState(7);
   const [selectedLinkId, setSelectedLinkId] = useState('');
   const [perLinkSeries, setPerLinkSeries] = useState(null);
+  const [variantsData, setVariantsData] = useState(null);
+  const [perLinkVariantsData, setPerLinkVariantsData] = useState(null);
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -58,21 +60,64 @@ const AnalyticsDashboard = () => {
   const fetchAnalyticsData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const [summaryRes, timeseriesRes, topLinksRes, referrersRes, devicesRes] = await Promise.all([
+      const results = await Promise.allSettled([
         client.get('/analytics/dashboard/summary'),
         client.get(`/analytics/dashboard/timeseries?days=${timeRange}`),
         client.get('/analytics/top-links'),
         client.get(`/analytics/referrers?days=${timeRange}`),
-        client.get(`/analytics/devices?days=${timeRange}`)
+        client.get(`/analytics/devices?days=${timeRange}`),
+        client.get(`/analytics/variants?days=${timeRange}`)
       ]);
 
-      setSummaryData(summaryRes.data);
-      setTimeseriesData(timeseriesRes.data);
-      setTopLinksData(topLinksRes.data);
-      setReferrersData(referrersRes.data);
-      setDevicesData(devicesRes.data);
+      const allRejected = results.every(r => r.status === 'rejected');
+
+      // Summary
+      if (results[0].status === 'fulfilled') {
+        setSummaryData(results[0].value.data);
+      } else {
+        setSummaryData({ totalClicks: 0, totalLinks: 0, activeLinks: 0, inactiveLinks: 0, averageClicksPerLink: 0, mostPopularLink: null });
+      }
+
+      // Timeseries
+      if (results[1].status === 'fulfilled') {
+        setTimeseriesData(results[1].value.data);
+      } else {
+        setTimeseriesData({ timeseriesData: [], totalClicks: 0, averageDailyClicks: 0, period: `${timeRange} days` });
+      }
+
+      // Top links
+      if (results[2].status === 'fulfilled') {
+        setTopLinksData(results[2].value.data);
+      } else {
+        setTopLinksData({ topLinks: [] });
+      }
+
+      // Referrers
+      if (results[3].status === 'fulfilled') {
+        setReferrersData(results[3].value.data);
+      } else {
+        setReferrersData({ referrers: [], period: `${timeRange} days` });
+      }
+
+      // Devices
+      if (results[4].status === 'fulfilled') {
+        setDevicesData(results[4].value.data);
+      } else {
+        setDevicesData({ devices: [], period: `${timeRange} days` });
+      }
+
+      // Variants
+      if (results[5].status === 'fulfilled') {
+        setVariantsData(results[5].value.data);
+      } else {
+        setVariantsData({ variants: [], period: `${timeRange} days` });
+      }
+
+      if (allRejected) {
+        setError('Failed to load analytics data. Please try again.');
+      }
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       setError('Failed to load analytics data. Please try again.');
@@ -94,6 +139,21 @@ const AnalyticsDashboard = () => {
       }
     };
     loadPerLink();
+  }, [selectedLinkId, timeRange]);
+
+  useEffect(() => {
+    const loadPerLinkVariants = async () => {
+      setPerLinkVariantsData(null);
+      if (!selectedLinkId) return;
+      try {
+        const res = await client.get(`/analytics/variants/by-link?linkId=${selectedLinkId}&days=${timeRange}`);
+        setPerLinkVariantsData(res.data || { variants: [] });
+      } catch (e) {
+        console.error('Failed to load per-link variants', e);
+        setPerLinkVariantsData({ variants: [] });
+      }
+    };
+    loadPerLinkVariants();
   }, [selectedLinkId, timeRange]);
 
   const buildCsv = (rows, columns) => {
@@ -204,6 +264,23 @@ const AnalyticsDashboard = () => {
           >
             Export Timeseries CSV
           </Button>
+          {selectedLinkId && (
+            <Button
+              variant="outlined"
+              onClick={() => downloadCsv(
+                `/analytics/export/timeseries/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
+                `analytics_link_${selectedLinkId}_timeseries_${timeRange}d.csv`,
+                (perLinkSeries || []),
+                [
+                  ['date', r => r.date],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]
+              )}
+            >
+              Export Selected Link Timeseries CSV
+            </Button>
+          )}
           <Button
             variant="outlined"
             onClick={() => downloadCsv(
@@ -416,6 +493,86 @@ const AnalyticsDashboard = () => {
             </Box>
           </Paper>
         </Grid>
+
+        {/* Variants Table */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="h6">Variants</Typography>
+              <Button size="small" onClick={() => {
+                if (!variantsData?.variants) return;
+                const csv = buildCsv(variantsData.variants, [
+                  ['variantId', r => r.variantId],
+                  ['variantTitle', r => r.variantTitle || ''],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]);
+                triggerDownload(csv, `analytics_variants_${timeRange}d.csv`);
+              }}>Export CSV</Button>
+            </Box>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {(variantsData?.variants || []).map((r, i) => (
+                  <Box component="tr" key={i}>
+                    <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Per-link Variants Table */}
+        {selectedLinkId && (
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6">Variants for selected link</Typography>
+                <Button size="small" onClick={() => {
+                  if (!perLinkVariantsData?.variants) return;
+                  downloadCsv(
+                    `/analytics/export/variants/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
+                    `analytics_link_${selectedLinkId}_variants_${timeRange}d.csv`,
+                    perLinkVariantsData.variants,
+                    [
+                      ['variantId', r => r.variantId],
+                      ['variantTitle', r => r.variantTitle || ''],
+                      ['clicks', r => r.clicks],
+                      ['uniqueVisitors', r => r.uniqueVisitors]
+                    ]
+                  );
+                }}>Export CSV</Button>
+              </Box>
+              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr">
+                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {(perLinkVariantsData?.variants || []).map((r, i) => (
+                    <Box component="tr" key={i}>
+                      <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        )}
 
         {/* Engagement Metrics */}
         <Grid item xs={12} md={6}>

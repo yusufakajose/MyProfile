@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,6 +26,11 @@ const LinkManager = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [query, setQuery] = useState('');
   const [pendingQuery, setPendingQuery] = useState('');
+  // Variants UI state
+  const [variantsOpenFor, setVariantsOpenFor] = useState(null); // linkId or null
+  const [variantsByLink, setVariantsByLink] = useState({}); // { [linkId]: Variant[] }
+  const [newVariantFormByLink, setNewVariantFormByLink] = useState({}); // { [linkId]: {title,url,description,weight,isActive} }
+  const [variantEdits, setVariantEdits] = useState({}); // { [variantId]: {title,url,description,weight,isActive} }
 
   const redirectOrigin = useMemo(() => {
     const base = client.defaults?.baseURL || '';
@@ -157,6 +162,71 @@ const LinkManager = () => {
     setDragIndex(null);
     await client.put('/links/reorder', reordered.map((l) => l.id));
     await load();
+  };
+
+  // Variants helpers
+  const loadVariants = async (linkId) => {
+    try {
+      const res = await client.get(`/links/${linkId}/variants`);
+      setVariantsByLink((prev) => ({ ...prev, [linkId]: res.data || [] }));
+    } catch (e) {
+      setVariantsByLink((prev) => ({ ...prev, [linkId]: [] }));
+    }
+  };
+
+  const toggleVariants = async (linkId) => {
+    const next = variantsOpenFor === linkId ? null : linkId;
+    setVariantsOpenFor(next);
+    if (next) {
+      await loadVariants(next);
+      setNewVariantFormByLink((prev) => ({ ...prev, [next]: prev[next] || { title: '', url: '', description: '', weight: 1, isActive: true } }));
+    }
+  };
+
+  const setNewVariantField = (linkId, field, value) => {
+    setNewVariantFormByLink((prev) => ({
+      ...prev,
+      [linkId]: { ...(prev[linkId] || { title: '', url: '', weight: 1, isActive: true }), [field]: value }
+    }));
+  };
+
+  const addVariant = async (linkId) => {
+    const f = newVariantFormByLink[linkId] || { title: '', url: '', description: '', weight: 1, isActive: true };
+    if (!f.title?.trim() || !/^https?:\/\//i.test(f.url || '')) return;
+    await client.post(`/links/${linkId}/variants`, {
+      title: f.title.trim(),
+      url: f.url.trim(),
+      description: f.description?.trim() || '',
+      weight: Number.isFinite(+f.weight) ? Math.max(0, parseInt(f.weight, 10)) : 1,
+      isActive: !!f.isActive,
+    });
+    await loadVariants(linkId);
+    setNewVariantFormByLink((prev) => ({ ...prev, [linkId]: { title: '', url: '', description: '', weight: 1, isActive: true } }));
+  };
+
+  const setVariantEditField = (variantId, field, value) => {
+    setVariantEdits((prev) => ({
+      ...prev,
+      [variantId]: { ...(prev[variantId] || {}), [field]: value }
+    }));
+  };
+
+  const saveVariant = async (linkId, variant) => {
+    const draft = variantEdits[variant.id] || {};
+    const payload = {
+      title: draft.title ?? variant.title,
+      url: draft.url ?? variant.url,
+      description: draft.description ?? variant.description,
+      weight: draft.weight != null ? Math.max(0, parseInt(draft.weight, 10)) : variant.weight,
+      isActive: draft.isActive != null ? !!draft.isActive : variant.isActive,
+    };
+    await client.put(`/links/${linkId}/variants/${variant.id}`, payload);
+    await loadVariants(linkId);
+  };
+
+  const deleteVariant = async (linkId, variantId) => {
+    await client.delete(`/links/${linkId}/variants/${variantId}`);
+    await loadVariants(linkId);
   };
 
   return (
@@ -300,6 +370,69 @@ const LinkManager = () => {
                     <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down"><ArrowDownwardIcon fontSize="inherit" /></IconButton>
                   </Stack>
                 </Stack>
+              </CardContent>
+              {variantsOpenFor === l.id && (
+                <CardContent sx={{ pt: 0 }}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Variants</Typography>
+                  {/* New variant form */}
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1 }}>
+                    <TextField size="small" label="Title" value={(newVariantFormByLink[l.id]?.title) || ''} onChange={(e) => setNewVariantField(l.id, 'title', e.target.value)} sx={{ flex: 1 }} />
+                    <TextField size="small" label="URL" value={(newVariantFormByLink[l.id]?.url) || ''} onChange={(e) => setNewVariantField(l.id, 'url', e.target.value)} sx={{ flex: 2 }} placeholder="https://" />
+                    <TextField size="small" label="Description" value={(newVariantFormByLink[l.id]?.description) || ''} onChange={(e) => setNewVariantField(l.id, 'description', e.target.value)} sx={{ flex: 2 }} />
+                    <TextField size="small" label="Weight" type="number" inputProps={{ min: 0 }} value={(newVariantFormByLink[l.id]?.weight) ?? 1} onChange={(e) => setNewVariantField(l.id, 'weight', e.target.value)} sx={{ width: 120 }} />
+                    <FormControlLabel control={<Switch size="small" checked={!!(newVariantFormByLink[l.id]?.isActive)} onChange={(e) => setNewVariantField(l.id, 'isActive', e.target.checked)} />} label={newVariantFormByLink[l.id]?.isActive ? 'Active' : 'Inactive'} />
+                    <Button variant="contained" size="small" onClick={() => addVariant(l.id)}>Add Variant</Button>
+                  </Stack>
+                  {/* Variants list */}
+                  <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <Box component="thead">
+                      <Box component="tr">
+                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Title</Box>
+                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>URL</Box>
+                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Description</Box>
+                        <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 120 }}>Weight</Box>
+                        <Box component="th" sx={{ textAlign: 'center', pb: 1, width: 120 }}>Active</Box>
+                        <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 160 }}>Actions</Box>
+                      </Box>
+                    </Box>
+                    <Box component="tbody">
+                      {(variantsByLink[l.id] || []).map((v) => (
+                        <Box component="tr" key={v.id}>
+                          <Box component="td" sx={{ py: 0.5 }}>
+                            <TextField size="small" value={(variantEdits[v.id]?.title) ?? v.title} onChange={(e) => setVariantEditField(v.id, 'title', e.target.value)} />
+                          </Box>
+                          <Box component="td" sx={{ py: 0.5 }}>
+                            <TextField size="small" value={(variantEdits[v.id]?.url) ?? v.url} onChange={(e) => setVariantEditField(v.id, 'url', e.target.value)} sx={{ minWidth: 220 }} />
+                          </Box>
+                          <Box component="td" sx={{ py: 0.5 }}>
+                            <TextField size="small" value={(variantEdits[v.id]?.description) ?? (v.description || '')} onChange={(e) => setVariantEditField(v.id, 'description', e.target.value)} sx={{ minWidth: 200 }} />
+                          </Box>
+                          <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
+                            <TextField size="small" type="number" inputProps={{ min: 0 }} value={(variantEdits[v.id]?.weight) ?? v.weight} onChange={(e) => setVariantEditField(v.id, 'weight', e.target.value)} sx={{ width: 100 }} />
+                          </Box>
+                          <Box component="td" sx={{ py: 0.5, textAlign: 'center' }}>
+                            <Switch size="small" checked={(variantEdits[v.id]?.isActive) ?? v.isActive} onChange={(e) => setVariantEditField(v.id, 'isActive', e.target.checked)} />
+                          </Box>
+                          <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
+                            <Stack direction="row" spacing={1} justifyContent="flex-end">
+                              <Button size="small" variant="outlined" onClick={() => saveVariant(l.id, v)}>Save</Button>
+                              <Button size="small" color="error" variant="text" onClick={() => deleteVariant(l.id, v.id)}>Delete</Button>
+                            </Stack>
+                          </Box>
+                        </Box>
+                      ))}
+                      {(variantsByLink[l.id] || []).length === 0 && (
+                        <Box component="tr"><Box component="td" colSpan={6} sx={{ py: 1, color: 'text.secondary' }}>No variants yet</Box></Box>
+                      )}
+                    </Box>
+                  </Box>
+                </CardContent>
+              )}
+              <CardContent sx={{ pt: 0 }}>
+                <Button size="small" variant="text" onClick={() => toggleVariants(l.id)}>
+                  {variantsOpenFor === l.id ? 'Hide Variants' : 'Manage Variants'}
+                </Button>
               </CardContent>
             </Card>
           </Grid>

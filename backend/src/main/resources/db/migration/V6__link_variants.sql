@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS link_variants (
+  id BIGSERIAL PRIMARY KEY,
+  link_id BIGINT NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+  title VARCHAR(100) NOT NULL,
+  url VARCHAR(500) NOT NULL,
+  weight INT NOT NULL DEFAULT 1,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  click_count BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_link_variants_link ON link_variants(link_id);
+
+

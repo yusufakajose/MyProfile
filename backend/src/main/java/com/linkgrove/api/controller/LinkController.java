@@ -4,6 +4,8 @@ import com.linkgrove.api.dto.*;
 import com.linkgrove.api.service.LinkService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import com.linkgrove.api.dto.LinkVariantRequest;
+import com.linkgrove.api.dto.LinkVariantResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,7 @@ import java.util.List;
 public class LinkController {
 
     private final LinkService linkService;
+    private final com.linkgrove.api.service.LinkVariantService linkVariantService;
 
     @PostMapping
     public ResponseEntity<LinkResponse> createLink(
@@ -162,5 +165,43 @@ public class LinkController {
         String username = authentication.getName();
         linkService.reorderLinks(username, linkIds);
         return ResponseEntity.ok().build();
+    }
+
+    // Variants CRUD
+    @GetMapping("/{linkId}/variants")
+    public ResponseEntity<List<LinkVariantResponse>> listVariants(
+            Authentication authentication,
+            @PathVariable Long linkId) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(linkVariantService.listVariants(username, linkId));
+    }
+
+    @PostMapping("/{linkId}/variants")
+    public ResponseEntity<LinkVariantResponse> addVariant(
+            Authentication authentication,
+            @PathVariable Long linkId,
+            @Valid @RequestBody LinkVariantRequest request) {
+        String username = authentication.getName();
+        return ResponseEntity.status(HttpStatus.CREATED).body(linkVariantService.addVariant(username, linkId, request));
+    }
+
+    @PutMapping("/{linkId}/variants/{variantId}")
+    public ResponseEntity<LinkVariantResponse> updateVariant(
+            Authentication authentication,
+            @PathVariable Long linkId,
+            @PathVariable Long variantId,
+            @Valid @RequestBody LinkVariantRequest request) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(linkVariantService.updateVariant(username, linkId, variantId, request));
+    }
+
+    @DeleteMapping("/{linkId}/variants/{variantId}")
+    public ResponseEntity<Void> deleteVariant(
+            Authentication authentication,
+            @PathVariable Long linkId,
+            @PathVariable Long variantId) {
+        String username = authentication.getName();
+        linkVariantService.deleteVariant(username, linkId, variantId);
+        return ResponseEntity.noContent().build();
     }
 }

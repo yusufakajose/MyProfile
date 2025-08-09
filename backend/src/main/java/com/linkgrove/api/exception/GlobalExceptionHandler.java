@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -45,6 +46,32 @@ public class GlobalExceptionHandler {
                 .build();
 
         log.warn("Validation error: {}", fieldErrors);
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    /**
+     * Handle validation errors from @Validated on parameters (e.g., @Min/@Max)
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, WebRequest request) {
+
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getConstraintViolations().forEach(cv -> {
+            String field = cv.getPropertyPath() != null ? cv.getPropertyPath().toString() : "param";
+            fieldErrors.put(field, cv.getMessage());
+        });
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message("Invalid request parameters")
+                .path(getPath(request))
+                .fieldErrors(fieldErrors)
+                .build();
+
+        log.warn("Constraint violation: {}", fieldErrors);
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
