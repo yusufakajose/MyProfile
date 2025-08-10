@@ -55,6 +55,7 @@ const AnalyticsDashboard = () => {
   const [variantsData, setVariantsData] = useState(null);
   const [perLinkVariantsData, setPerLinkVariantsData] = useState(null);
   const [perLinkSourcesData, setPerLinkSourcesData] = useState(null);
+  const [sourceFilter, setSourceFilter] = useState('');
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -233,6 +234,14 @@ const AnalyticsDashboard = () => {
       }
     }
   };
+
+  // Derived filtered datasets for Sources
+  const allSources = (sourcesData?.sources || []);
+  const filteredSources = sourceFilter ? allSources.filter(s => (s.source || '').toLowerCase() === sourceFilter.toLowerCase()) : allSources;
+  const perLinkAllSources = (perLinkSourcesData?.sources || []);
+  const perLinkFilteredSources = sourceFilter ? perLinkAllSources.filter(s => (s.source || '').toLowerCase() === sourceFilter.toLowerCase()) : perLinkAllSources;
+  const sourcesChartData = filteredSources.map(s => ({ name: s.source, value: s.clicks }));
+  const perLinkSourcesChartData = perLinkFilteredSources.map(s => ({ name: s.source, value: s.clicks }));
 
   if (loading) {
     return (
@@ -565,7 +574,7 @@ const AnalyticsDashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Sources Table */}
+        {/* Sources Chart + Table */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -581,6 +590,26 @@ const AnalyticsDashboard = () => {
                 ]
               )}>Export CSV</Button>
             </Box>
+            <Box display="flex" alignItems="center" gap={2} mb={2}>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="src-filter">Filter Source</InputLabel>
+                <Select labelId="src-filter" label="Filter Source" value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+                  <MenuItem value="">All</MenuItem>
+                  {[...new Set((sourcesData?.sources || []).map(s => s.source))].map((s) => (
+                    <MenuItem key={s} value={s}>{s}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={sourcesChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" name="Clicks" fill="#00C49F" />
+              </BarChart>
+            </ResponsiveContainer>
             <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
               <Box component="thead">
                 <Box component="tr">
@@ -590,7 +619,7 @@ const AnalyticsDashboard = () => {
                 </Box>
               </Box>
               <Box component="tbody">
-                {(sourcesData?.sources || []).map((r, i) => (
+                {filteredSources.map((r, i) => (
                   <Box component="tr" key={i}>
                     <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
                     <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
@@ -682,7 +711,7 @@ const AnalyticsDashboard = () => {
           </Grid>
         )}
 
-        {/* Per-link Sources Table */}
+        {/* Per-link Sources Chart + Table */}
         {selectedLinkId && (
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
@@ -702,6 +731,15 @@ const AnalyticsDashboard = () => {
                   );
                 }}>Export CSV</Button>
               </Box>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={perLinkSourcesChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" name="Clicks" fill="#0088FE" />
+                </BarChart>
+              </ResponsiveContainer>
               <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
                 <Box component="thead">
                   <Box component="tr">
@@ -711,7 +749,7 @@ const AnalyticsDashboard = () => {
                   </Box>
                 </Box>
                 <Box component="tbody">
-                  {(perLinkSourcesData?.sources || []).map((r, i) => (
+                  {perLinkFilteredSources.map((r, i) => (
                     <Box component="tr" key={i}>
                       <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
                       <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
