@@ -25,6 +25,22 @@
 - [ ] Testability: Testcontainers integration tests (Postgres+Redis+RabbitMQ), contract tests, smoke tests
 - [ ] Admin UX APIs: webhook failures view, queues, rate-limit overviews beyond raw counters
 
+### Deferred/Backlog (from recent work)
+- [ ] Document HEAD support for QR endpoints in backend README and API summary
+  - Describe HEAD /r/{id}/qr.png and /r/{id}/qr.svg (and alias variants)
+  - Headers returned: ETag, Cache-Control, X-RateLimit-*
+  - 200 vs 304 behavior with If-None-Match
+- [ ] Allowlist logo hostnames for QR logos (hardening)
+  - Config: qr.logo.allowedHosts (comma-separated), qr.logo.allowedTlds (optional)
+  - Enforce alongside https/content-type/size checks; return structured 400 JSON on violation
+  - Unit + integration tests for allowed vs blocked hosts
+- [ ] Deterministic 429 test for QR endpoints
+  - Override ratelimit in test profile to a low threshold; assert 429 + Retry-After reliably
+- [ ] Frontend: per-link Sources CSV export button wiring
+  - Implement download logic for per-link Sources export in `AnalyticsDashboard.js`
+- [ ] Nginx: expand social bot UA map
+  - Add additional known bot UAs and verify routing to meta endpoint
+
 ## Frontend
 - [x] Auth flow (login/register), token storage, axios interceptor, 401 redirect guard
 - [x] Protected routes via `ProtectedRoute`
@@ -58,6 +74,7 @@
 ## DevEx / CI/CD
 - [x] Git initialized; `.gitignore` excludes build artifacts/env/IDE
 - [ ] CI (build → test → package Docker images for backend/frontend)
+- [ ] Docs: Update root README CI badge URL (replace OWNER/REPO after pushing to GitHub)
 - [ ] Docker: serve frontend via Nginx; pass API URL via env; verify CORS; one-command compose
 - [ ] Developer docs: local `.env` setup; `start.sh` reads env; troubleshooting
 
