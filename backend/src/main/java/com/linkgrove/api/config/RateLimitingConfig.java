@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -23,6 +24,12 @@ import java.util.Map;
 public class RateLimitingConfig extends OncePerRequestFilter {
 
     private final StringRedisTemplate redisTemplate;
+    
+    @Value("${ratelimit.qr.windowSeconds:60}")
+    private int qrWindowSeconds;
+
+    @Value("${ratelimit.qr.maxRequests:60}")
+    private int qrMaxRequests;
 
     private static final Map<String, Rule> RULES = new LinkedHashMap<>() {{
         put("/api/public/click/", new Rule(10, 30)); // 30 requests / 10s
@@ -34,7 +41,7 @@ public class RateLimitingConfig extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         String path = request.getRequestURI();
-        Rule rule = isQrPath(path) ? new Rule(10, 10) : matchRule(path);
+        Rule rule = isQrPath(path) ? new Rule(qrWindowSeconds, qrMaxRequests, "/r/qr") : matchRule(path);
         if (rule == null) {
             filterChain.doFilter(request, response);
             return;
@@ -55,6 +62,13 @@ public class RateLimitingConfig extends OncePerRequestFilter {
         }
         ops.add(key, String.valueOf(nowMs), nowMs);
         redisTemplate.expire(key, Duration.ofSeconds(rule.windowSeconds + 5));
+
+        // Expose remaining budget for clients (best-effort)
+        if (isQrPath(path)) {
+            long used = (current == null ? 0 : current) + 1L; // include this request
+            long remaining = Math.max(0, rule.maxRequests - used);
+            response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
+        }
 
         filterChain.doFilter(request, response);
     }
@@ -91,6 +105,11 @@ public class RateLimitingConfig extends OncePerRequestFilter {
         Rule(int windowSeconds, int maxRequests) {
             this.windowSeconds = windowSeconds;
             this.maxRequests = maxRequests;
+        }
+        Rule(int windowSeconds, int maxRequests, String prefix) {
+            this.windowSeconds = windowSeconds;
+            this.maxRequests = maxRequests;
+            this.prefix = prefix;
         }
     }
 }

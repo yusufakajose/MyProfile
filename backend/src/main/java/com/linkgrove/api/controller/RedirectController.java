@@ -140,12 +140,18 @@ public class RedirectController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
                     .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".png\"")
                     .build();
         }
         return ResponseEntity.ok()
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".png\"")
                 .body(png);
     }
@@ -172,12 +178,18 @@ public class RedirectController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
                     .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".svg\"")
                     .build();
         }
         return ResponseEntity.ok()
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".svg\"")
                 .body(svg);
     }
@@ -208,12 +220,18 @@ public class RedirectController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
                     .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".png\"")
                     .build();
         }
         return ResponseEntity.ok()
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".png\"")
                 .body(png);
     }
@@ -240,12 +258,18 @@ public class RedirectController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
                     .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".svg\"")
                     .build();
         }
         return ResponseEntity.ok()
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".svg\"")
                 .body(svg);
     }

@@ -38,6 +38,12 @@ logging:
     org.springframework.test.context: WARN
     org.springframework.web: WARN
 
+# Rate limit config (loosen for tests to avoid flakiness)
+ratelimit:
+  qr:
+    windowSeconds: 60
+    maxRequests: 1000
+
 # JWT configuration for tests
 jwt:
   secret: test-secret-key-for-integration-tests-this-should-be-long-enough

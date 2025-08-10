@@ -108,6 +108,9 @@ class ClickTrackingIntegrationTest {
                         .param("ecc", "M"))
                 .andExpect(status().isOk())
                 .andExpect(header().exists("ETag"))
+                .andExpect(header().string("X-RateLimit-Limit", "60"))
+                .andExpect(header().string("X-RateLimit-Window", String.valueOf(60)))
+                .andExpect(header().string("X-RateLimit-Policy", containsString("window=60")))
                 .andReturn();
         String etag = qrPng.getResponse().getHeader("ETag");
         mockMvc.perform(get("/r/" + linkId + "/qr.png")
@@ -115,7 +118,10 @@ class ClickTrackingIntegrationTest {
                         .param("margin", "1")
                         .param("ecc", "M")
                         .header("If-None-Match", etag))
-                .andExpect(status().isNotModified());
+                .andExpect(status().isNotModified())
+                .andExpect(header().string("X-RateLimit-Limit", "60"))
+                .andExpect(header().string("X-RateLimit-Window", String.valueOf(60)))
+                .andExpect(header().string("X-RateLimit-Policy", containsString("window=60")));
 
         // 2. Test redirect endpoint
         mockMvc.perform(get("/r/" + linkId))

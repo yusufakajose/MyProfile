@@ -30,6 +30,7 @@ public class LinkService {
     private final UserRepository userRepository;
     private final StringRedisTemplate redisTemplate;
     private final TagRepository tagRepository;
+    private final QrPrewarmService qrPrewarmService;
 
     @Caching(evict = {
         @CacheEvict(value = "publicProfiles", key = "#username"),
@@ -71,6 +72,8 @@ public class LinkService {
             link.setTags(resolveTags(request.getTags()));
         }
         Link saved = linkRepository.save(link);
+        // Fire-and-forget prewarm
+        try { qrPrewarmService.onLinkCreatedOrUpdated(saved); } catch (Exception ignored) {}
         return mapToLinkResponse(saved);
     }
 

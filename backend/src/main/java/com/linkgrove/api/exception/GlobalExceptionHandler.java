@@ -163,7 +163,9 @@ public class GlobalExceptionHandler {
                 .build();
 
         log.warn("Rate limit exceeded: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(errorResponse);
     }
 
     /**
