@@ -117,7 +117,7 @@ class QrAndSourcesIntegrationTest {
         long dt2 = System.nanoTime() - t2;
         // Note: Skip strict timing assertion to avoid flakiness in CI
 
-        // Test QR SVG ETag + 304
+        // Test QR SVG ETag + 304 and HEAD
         MvcResult svg1 = mockMvc.perform(get("/r/" + linkId + "/qr.svg")
                         .param("size", "256")
                         .param("margin", "1")
@@ -140,6 +140,24 @@ class QrAndSourcesIntegrationTest {
                 .andExpect(header().string("X-RateLimit-Limit", "60"))
                 .andExpect(header().string("X-RateLimit-Window", String.valueOf(60)))
                 .andExpect(header().string("X-RateLimit-Policy", containsString("window=60")));
+
+        // HEAD png 200 with headers
+        mockMvc.perform(head("/r/" + linkId + "/qr.png")
+                        .param("size", "256")
+                        .param("margin", "1")
+                        .param("ecc", "H")
+                        .param("utm", "1"))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("ETag"))
+                .andExpect(header().string("X-RateLimit-Limit", "60"));
+        // HEAD png 304
+        mockMvc.perform(head("/r/" + linkId + "/qr.png")
+                        .param("size", "256")
+                        .param("margin", "1")
+                        .param("ecc", "H")
+                        .param("utm", "1")
+                        .header("If-None-Match", etagPng))
+                .andExpect(status().isNotModified());
 
         // Trigger a QR source click (redirect)
         mockMvc.perform(get("/r/" + linkId)

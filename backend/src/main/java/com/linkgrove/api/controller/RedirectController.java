@@ -156,6 +156,48 @@ public class RedirectController {
                 .body(png);
     }
 
+    @RequestMapping(value = "/{linkId}/qr.png", method = RequestMethod.HEAD, produces = "image/png")
+    public ResponseEntity<Void> qrPngHead(@PathVariable Long linkId,
+                                          @RequestParam(required = false, defaultValue = "256") int size,
+                                          @RequestParam(required = false, defaultValue = "1") int margin,
+                                          @RequestParam(required = false) String utm,
+                                          @RequestParam(required = false) String fg,
+                                          @RequestParam(required = false) String bg,
+                                          @RequestParam(required = false) String logo,
+                                          @RequestParam(required = false, name = "ecc") String ecc,
+                                          HttpServletRequest request) {
+        if (logo != null && !logo.isBlank() && !isAllowedLogoUrl(logo)) {
+            throw new IllegalArgumentException("Invalid logo URL. Only https and png/jpg/jpeg are allowed.");
+        }
+        String url = buildShortUrl(request, "/r/" + linkId);
+        url = maybeAppendUtm(url, utm);
+        Integer fgArgb = parseHexColor(fg);
+        Integer bgArgb = parseHexColor(bg);
+        validateContrastOrThrow(fgArgb, bgArgb);
+        ErrorCorrectionLevel lvl = parseEcc(ecc);
+        byte[] png = qrCodeService.generatePng(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, logo, lvl);
+        String etag = computeEtag(png);
+        String inm = request.getHeader("If-None-Match");
+        if (etag.equals(inm)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                    .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".png\"")
+                    .build();
+        }
+        return ResponseEntity.ok()
+                .header("ETag", etag)
+                .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".png\"")
+                .build();
+    }
+
     @GetMapping(value = "/{linkId}/qr.svg", produces = "image/svg+xml")
     public ResponseEntity<String> qrSvg(@PathVariable Long linkId,
                                         @RequestParam(required = false, defaultValue = "256") int size,
@@ -192,6 +234,44 @@ public class RedirectController {
                 .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".svg\"")
                 .body(svg);
+    }
+
+    @RequestMapping(value = "/{linkId}/qr.svg", method = RequestMethod.HEAD, produces = "image/svg+xml")
+    public ResponseEntity<Void> qrSvgHead(@PathVariable Long linkId,
+                                          @RequestParam(required = false, defaultValue = "256") int size,
+                                          @RequestParam(required = false, defaultValue = "1") int margin,
+                                          @RequestParam(required = false) String utm,
+                                          @RequestParam(required = false) String fg,
+                                          @RequestParam(required = false) String bg,
+                                          @RequestParam(required = false, name = "ecc") String ecc,
+                                          HttpServletRequest request) {
+        String url = buildShortUrl(request, "/r/" + linkId);
+        url = maybeAppendUtm(url, utm);
+        Integer fgArgb = parseHexColor(fg);
+        Integer bgArgb = parseHexColor(bg);
+        validateContrastOrThrow(fgArgb, bgArgb);
+        ErrorCorrectionLevel lvl = parseEcc(ecc);
+        String svg = qrCodeService.generateSvg(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, lvl);
+        String etag = computeEtag(svg);
+        String inm = request.getHeader("If-None-Match");
+        if (etag.equals(inm)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                    .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".svg\"")
+                    .build();
+        }
+        return ResponseEntity.ok()
+                .header("ETag", etag)
+                .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                .header("Content-Disposition", "inline; filename=\"qr-" + linkId + ".svg\"")
+                .build();
     }
 
     @GetMapping(value = "/a/{alias}/qr.png", produces = "image/png")
@@ -236,6 +316,48 @@ public class RedirectController {
                 .body(png);
     }
 
+    @RequestMapping(value = "/a/{alias}/qr.png", method = RequestMethod.HEAD, produces = "image/png")
+    public ResponseEntity<Void> qrAliasPngHead(@PathVariable String alias,
+                                               @RequestParam(required = false, defaultValue = "256") int size,
+                                               @RequestParam(required = false, defaultValue = "1") int margin,
+                                               @RequestParam(required = false) String utm,
+                                               @RequestParam(required = false) String fg,
+                                               @RequestParam(required = false) String bg,
+                                               @RequestParam(required = false) String logo,
+                                               @RequestParam(required = false, name = "ecc") String ecc,
+                                               HttpServletRequest request) {
+        if (logo != null && !logo.isBlank() && !isAllowedLogoUrl(logo)) {
+            throw new IllegalArgumentException("Invalid logo URL. Only https and png/jpg/jpeg are allowed.");
+        }
+        String url = buildShortUrl(request, "/r/a/" + alias);
+        url = maybeAppendUtm(url, utm);
+        Integer fgArgb = parseHexColor(fg);
+        Integer bgArgb = parseHexColor(bg);
+        validateContrastOrThrow(fgArgb, bgArgb);
+        ErrorCorrectionLevel lvl = parseEcc(ecc);
+        byte[] png = qrCodeService.generatePng(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, logo, lvl);
+        String etag = computeEtag(png);
+        String inm = request.getHeader("If-None-Match");
+        if (etag.equals(inm)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                    .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".png\"")
+                    .build();
+        }
+        return ResponseEntity.ok()
+                .header("ETag", etag)
+                .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".png\"")
+                .build();
+    }
+
     @GetMapping(value = "/a/{alias}/qr.svg", produces = "image/svg+xml")
     public ResponseEntity<String> qrAliasSvg(@PathVariable String alias,
                                              @RequestParam(required = false, defaultValue = "256") int size,
@@ -272,6 +394,44 @@ public class RedirectController {
                 .header("X-RateLimit-Policy", "ip; window=60; max=60")
                 .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".svg\"")
                 .body(svg);
+    }
+
+    @RequestMapping(value = "/a/{alias}/qr.svg", method = RequestMethod.HEAD, produces = "image/svg+xml")
+    public ResponseEntity<Void> qrAliasSvgHead(@PathVariable String alias,
+                                               @RequestParam(required = false, defaultValue = "256") int size,
+                                               @RequestParam(required = false, defaultValue = "1") int margin,
+                                               @RequestParam(required = false) String utm,
+                                               @RequestParam(required = false) String fg,
+                                               @RequestParam(required = false) String bg,
+                                               @RequestParam(required = false, name = "ecc") String ecc,
+                                               HttpServletRequest request) {
+        String url = buildShortUrl(request, "/r/a/" + alias);
+        url = maybeAppendUtm(url, utm);
+        Integer fgArgb = parseHexColor(fg);
+        Integer bgArgb = parseHexColor(bg);
+        validateContrastOrThrow(fgArgb, bgArgb);
+        ErrorCorrectionLevel lvl = parseEcc(ecc);
+        String svg = qrCodeService.generateSvg(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, lvl);
+        String etag = computeEtag(svg);
+        String inm = request.getHeader("If-None-Match");
+        if (etag.equals(inm)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header("Cache-Control", "public, max-age=86400, immutable")
+                    .header("X-RateLimit-Limit", "60")
+                    .header("X-RateLimit-Window", String.valueOf(60))
+                    .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                    .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".svg\"")
+                    .build();
+        }
+        return ResponseEntity.ok()
+                .header("ETag", etag)
+                .header("Cache-Control", "public, max-age=86400, immutable")
+                .header("X-RateLimit-Limit", "60")
+                .header("X-RateLimit-Window", String.valueOf(60))
+                .header("X-RateLimit-Policy", "ip; window=60; max=60")
+                .header("Content-Disposition", "inline; filename=\"qr-" + alias + ".svg\"")
+                .build();
     }
 
     @PostMapping(value = "/{linkId}/qr/pregenerate")
