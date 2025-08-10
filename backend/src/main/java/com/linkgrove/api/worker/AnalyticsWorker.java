@@ -33,6 +33,9 @@ public class AnalyticsWorker {
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
     private final com.linkgrove.api.service.WebhookService webhookService;
     private final com.linkgrove.api.repository.LinkVariantDailyAggregateRepository variantAggregateRepository;
+    private final com.linkgrove.api.repository.LinkGeoDailyAggregateRepository geoAggregateRepository;
+    private final com.linkgrove.api.service.GeoIpService geoIpService;
+    private final com.linkgrove.api.repository.LinkSourceDailyAggregateRepository sourceAggregateRepository;
 
     /**
      * Process link click events from RabbitMQ queue.
@@ -49,7 +52,13 @@ public class AnalyticsWorker {
         @CacheEvict(value = "analytics", key = "#event.username + '_overview'"),
         @CacheEvict(value = "analytics", key = "#event.username + '_detailed'"),
         @CacheEvict(value = "analytics", key = "#event.username + '_top_links'"),
-        @CacheEvict(value = "linkPreviews", key = "#event.linkId")
+        @CacheEvict(value = "linkPreviews", key = "#event.linkId"),
+        // Invalidate analytics breakdown caches so new clicks show up immediately
+        @CacheEvict(value = "analytics-referrers-v1", allEntries = true),
+        @CacheEvict(value = "analytics-devices-v1", allEntries = true),
+        @CacheEvict(value = "analytics-countries-v1", allEntries = true),
+        @CacheEvict(value = "analytics-variants-v1", allEntries = true),
+        @CacheEvict(value = "analytics-variants-by-link-v1", allEntries = true)
     })
     public void processLinkClick(LinkClickEvent event) {
         try {
@@ -112,6 +121,21 @@ public class AnalyticsWorker {
                 }
             }
 
+            // Optional: treat QR scans specially (when source=qr or utm_medium=qr)
+            // Source aggregation (e.g., qr, email, social)
+            String source = normalizeSource(event);
+            if (source != null) {
+                sourceAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day, source);
+                if (visitorId != null) {
+                    String sKey = String.format("uvs:%s:%d:%s:%s", event.getUsername(), event.getLinkId(), day, source);
+                    Long addedS = redisTemplate.opsForSet().add(sKey, visitorId);
+                    redisTemplate.expire(sKey, java.time.Duration.ofDays(40));
+                    if (addedS != null && addedS > 0) {
+                        sourceAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, source);
+                    }
+                }
+            }
+
             // Device aggregation (simple UA classifier)
             String device = classifyDevice(event.getUserAgent());
             deviceAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day, device);
@@ -121,6 +145,20 @@ public class AnalyticsWorker {
                 redisTemplate.expire(dKey, java.time.Duration.ofDays(40));
                 if (addedD != null && addedD > 0) {
                     deviceAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, device);
+                }
+            }
+
+            // Geo aggregation (country from IP)
+            String country = geoIpService.resolveCountryIso2(event.getClientIp());
+            if (country != null) {
+                geoAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), day, country);
+                if (visitorId != null) {
+                    String gKey = String.format("uvg:%s:%d:%s:%s", event.getUsername(), event.getLinkId(), day, country);
+                    Long addedG = redisTemplate.opsForSet().add(gKey, visitorId);
+                    redisTemplate.expire(gKey, java.time.Duration.ofDays(40));
+                    if (addedG != null && addedG > 0) {
+                        geoAggregateRepository.incrementUnique(event.getUsername(), event.getLinkId(), day, country);
+                    }
                 }
             }
             
@@ -215,5 +253,21 @@ public class AnalyticsWorker {
         if (s.contains("mobi") || s.contains("iphone") || s.contains("android")) return "mobile";
         if (s.contains("windows") || s.contains("macintosh") || s.contains("linux")) return "desktop";
         return "other";
+    }
+
+    private String normalizeSource(LinkClickEvent event) {
+        try {
+            if (event == null) return null;
+            if (event.getSource() != null && !event.getSource().isBlank()) {
+                return event.getSource().toLowerCase();
+            }
+            String utmMedium = event.getUtmMedium();
+            if (utmMedium != null && !utmMedium.isBlank()) {
+                return utmMedium.toLowerCase();
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -83,6 +83,95 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getDeviceBreakdown(username, days));
     }
 
+    @GetMapping("/countries")
+    public ResponseEntity<?> getCountryBreakdown(Authentication authentication,
+                                                 @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(analyticsService.getCountryBreakdown(username, days));
+    }
+
+    @GetMapping("/sources")
+    public ResponseEntity<?> getSourceBreakdown(Authentication authentication,
+                                                @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(analyticsService.getSourceBreakdown(username, days));
+    }
+
+    @GetMapping("/sources/by-link")
+    public ResponseEntity<?> getSourceBreakdownByLink(Authentication authentication,
+                                                      @RequestParam @Min(1) Long linkId,
+                                                      @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(analyticsService.getSourceBreakdownByLink(username, linkId, days));
+    }
+
+    @GetMapping(value = "/export/countries", produces = "text/csv")
+    public ResponseEntity<String> exportCountriesCsv(Authentication authentication,
+                                                     @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        var data = analyticsService.getCountryBreakdown(username, days);
+        var rows = data.getCountries();
+        StringBuilder sb = new StringBuilder();
+        sb.append("country,clicks,uniqueVisitors\n");
+        if (rows != null) {
+            for (var row : rows) {
+                String c = String.valueOf(row.getCountry());
+                String clicks = String.valueOf(row.getClicks());
+                String uniques = String.valueOf(row.getUniqueVisitors());
+                sb.append(escapeCsv(c)).append(',').append(clicks).append(',').append(uniques).append('\n');
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=analytics_countries_" + days + "d_" + username + ".csv");
+        return ResponseEntity.ok().headers(headers).body(sb.toString());
+    }
+
+    @GetMapping(value = "/export/sources", produces = "text/csv")
+    public ResponseEntity<String> exportSourcesCsv(Authentication authentication,
+                                                   @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        var data = analyticsService.getSourceBreakdown(username, days);
+        var rows = data.getSources();
+        StringBuilder sb = new StringBuilder();
+        sb.append("source,clicks,uniqueVisitors\n");
+        if (rows != null) {
+            for (var row : rows) {
+                String s = String.valueOf(row.getSource());
+                String clicks = String.valueOf(row.getClicks());
+                String uniques = String.valueOf(row.getUniqueVisitors());
+                sb.append(escapeCsv(s)).append(',').append(clicks).append(',').append(uniques).append('\n');
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=analytics_sources_" + days + "d_" + username + ".csv");
+        return ResponseEntity.ok().headers(headers).body(sb.toString());
+    }
+
+    @GetMapping(value = "/export/sources/by-link", produces = "text/csv")
+    public ResponseEntity<String> exportSourcesByLinkCsv(Authentication authentication,
+                                                         @RequestParam @Min(1) Long linkId,
+                                                         @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {
+        String username = authentication.getName();
+        var data = analyticsService.getSourceBreakdownByLink(username, linkId, days);
+        var rows = data.getSources();
+        StringBuilder sb = new StringBuilder();
+        sb.append("source,clicks,uniqueVisitors\n");
+        if (rows != null) {
+            for (var row : rows) {
+                String s = String.valueOf(row.getSource());
+                String clicks = String.valueOf(row.getClicks());
+                String uniques = String.valueOf(row.getUniqueVisitors());
+                sb.append(escapeCsv(s)).append(',').append(clicks).append(',').append(uniques).append('\n');
+            }
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("text/csv"));
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=analytics_sources_link_" + linkId + "_" + days + "d_" + username + ".csv");
+        return ResponseEntity.ok().headers(headers).body(sb.toString());
+    }
+
     @GetMapping("/variants")
     public ResponseEntity<?> getVariantBreakdown(Authentication authentication,
                                                  @RequestParam(defaultValue = "7") @Min(1) @Max(365) int days) {

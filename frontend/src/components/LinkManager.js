@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,7 +8,32 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
 import client from '../api/client';
+
+const Favicon = ({ url, size = 18 }) => {
+  const host = useMemo(() => {
+    try { return new URL(url).hostname; } catch { return ''; }
+  }, [url]);
+  const [src, setSrc] = useState(host ? `https://icons.duckduckgo.com/ip3/${host}.ico` : null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); setSrc(host ? `https://icons.duckduckgo.com/ip3/${host}.ico` : null); }, [host]);
+  if (!host || failed || !src) return null;
+  return (
+    <img
+      src={src}
+      width={size}
+      height={size}
+      alt={`favicon of ${host}`}
+      loading="lazy"
+      style={{ borderRadius: 4 }}
+      onError={() => {
+        if (src && src.includes('duckduckgo')) setSrc(`https://www.google.com/s2/favicons?domain=${host}&sz=${size * 2}`);
+        else setFailed(true);
+      }}
+    />
+  );
+};
 
 const LinkManager = () => {
   const [links, setLinks] = useState([]);
@@ -24,6 +49,40 @@ const LinkManager = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
+  const [toast, setToast] = useState({ open: false, message: '' });
+  const [qrDialog, setQrDialog] = useState({ open: false, link: null });
+  const [qrOptions, setQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
+  const [qrPreviewUrl, setQrPreviewUrl] = useState('');
+  const CONTRAST_THRESHOLD = 2.5; // match server
+
+  const hexToRgb = (hex) => {
+    if (!hex) return { r: 0, g: 0, b: 0 };
+    let s = hex.startsWith('#') ? hex.slice(1) : hex;
+    if (s.length === 3) s = s.split('').map((c) => c + c).join('');
+    const n = parseInt(s, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+  const srgbToLinear = (c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const relLuminance = ({ r, g, b }) => 0.2126 * srgbToLinear(r / 255) + 0.7152 * srgbToLinear(g / 255) + 0.0722 * srgbToLinear(b / 255);
+  const computeContrast = (fgHex, bgHex) => {
+    const L1 = relLuminance(hexToRgb(fgHex));
+    const L2 = relLuminance(hexToRgb(bgHex));
+    const lighter = Math.max(L1, L2);
+    const darker = Math.min(L1, L2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+  const contrastRatio = useMemo(() => computeContrast(qrOptions.fg, qrOptions.bg), [qrOptions.fg, qrOptions.bg]);
+  const contrastOk = contrastRatio >= CONTRAST_THRESHOLD;
+  const logoValid = useMemo(() => {
+    if (!qrOptions.logo) return true;
+    try {
+      const u = new URL(qrOptions.logo);
+      const p = u.pathname.toLowerCase();
+      return u.protocol === 'https:' && (p.endsWith('.png') || p.endsWith('.jpg') || p.endsWith('.jpeg'));
+    } catch {
+      return false;
+    }
+  }, [qrOptions.logo]);
   const [query, setQuery] = useState('');
   const [pendingQuery, setPendingQuery] = useState('');
   // Variants UI state
@@ -132,10 +191,87 @@ const LinkManager = () => {
 
   const shortUrlFor = (id, alias) => alias ? `${redirectOrigin}/r/a/${encodeURIComponent(alias)}` : `${redirectOrigin}/r/${id}`;
 
+  const qrUrlFor = (id, alias, { format = 'png', size = 256, margin = 1, utm = false, fg, bg, logo, ecc } = {}) => {
+    const base = alias ? `${redirectOrigin}/r/a/${encodeURIComponent(alias)}/qr.${format}` : `${redirectOrigin}/r/${id}/qr.${format}`;
+    const params = new URLSearchParams({ size: String(size), margin: String(margin) });
+    if (utm) params.set('utm', '1');
+    if (fg) params.set('fg', fg.replace('#', ''));
+    if (bg) params.set('bg', bg.replace('#', ''));
+    if (logo) params.set('logo', logo);
+    if (ecc) params.set('ecc', ecc);
+    return `${base}?${params.toString()}`;
+  };
+
+  const openQrDialog = (link) => {
+    setQrDialog({ open: true, link });
+    setQrOptions({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
+  };
+
+  const closeQrDialog = () => setQrDialog({ open: false, link: null });
+
+  const downloadQr = async () => {
+    const l = qrDialog.link;
+    if (!l) return;
+    const url = qrUrlFor(l.id, l.alias, qrOptions);
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const j = await resp.json().catch(() => null);
+          const msg = j?.message || 'Download failed';
+          throw new Error(msg);
+        }
+        throw new Error('Download failed');
+      }
+      const blob = await resp.blob();
+      const a = document.createElement('a');
+      const ext = qrOptions.format === 'svg' ? 'svg' : 'png';
+      a.href = URL.createObjectURL(blob);
+      a.download = `qr-${l.id}${l.alias ? '-' + l.alias : ''}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      setToast({ open: true, message: e?.message || 'Download failed' });
+    }
+  };
+
+  const copyQrImage = async () => {
+    const l = qrDialog.link;
+    if (!l) return;
+    const url = qrUrlFor(l.id, l.alias, qrOptions);
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const j = await resp.json().catch(() => null);
+          const msg = j?.message || 'Failed to copy image';
+          throw new Error(msg);
+        }
+        throw new Error('Failed to copy image');
+      }
+      const blob = await resp.blob();
+      if (navigator.clipboard && 'write' in navigator.clipboard) {
+        const item = new ClipboardItem({ [blob.type]: blob });
+        await navigator.clipboard.write([item]);
+        setToast({ open: true, message: 'QR copied to clipboard' });
+      } else {
+        // Fallback: open in new tab
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank');
+      }
+    } catch (e) {
+      setToast({ open: true, message: e?.message || 'Copy failed' });
+    }
+  };
+
   const copyShort = async (id, alias) => {
     const url = shortUrlFor(id, alias);
     try {
       await navigator.clipboard.writeText(url);
+      setToast({ open: true, message: 'Short link copied' });
     } catch {
       const ta = document.createElement('textarea');
       ta.value = url;
@@ -143,6 +279,7 @@ const LinkManager = () => {
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
+      setToast({ open: true, message: 'Short link copied' });
     }
   };
 
@@ -324,6 +461,7 @@ const LinkManager = () => {
                     ) : (
                       <>
                         <Stack direction="row" alignItems="center" spacing={1}>
+                          <Favicon url={l.url} size={18} />
                           <Typography variant="subtitle1">{l.title}</Typography>
                           {typeof l.clickCount === 'number' && (
                             <Typography variant="caption" color="text.secondary">{l.clickCount} clicks</Typography>
@@ -366,6 +504,9 @@ const LinkManager = () => {
                     </Tooltip>
                     <Tooltip title="Open short link">
                       <IconButton onClick={() => openShort(l.id, l.alias)} aria-label="open short link"><OpenInNewIcon fontSize="small" /></IconButton>
+                    </Tooltip>
+                    <Tooltip title="Get QR code">
+                      <IconButton onClick={() => openQrDialog(l)} aria-label="get qr"><QrCode2Icon fontSize="small" /></IconButton>
                     </Tooltip>
                     <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down"><ArrowDownwardIcon fontSize="inherit" /></IconButton>
                   </Stack>
@@ -448,6 +589,68 @@ const LinkManager = () => {
           />
         </Box>
       )}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={2000}
+        onClose={() => setToast({ open: false, message: '' })}
+        message={toast.message}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      <Dialog open={qrDialog.open} onClose={closeQrDialog} fullWidth maxWidth="xs">
+        <DialogTitle>Download QR code</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <FormControl size="small">
+              <InputLabel id="qr-format-label">Format</InputLabel>
+              <Select labelId="qr-format-label" label="Format" value={qrOptions.format} onChange={(e) => setQrOptions((o) => ({ ...o, format: e.target.value }))}>
+                <MenuItem value="png">PNG</MenuItem>
+                <MenuItem value="svg">SVG</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small">
+              <InputLabel id="qr-ecc-label">Error correction</InputLabel>
+              <Select labelId="qr-ecc-label" label="Error correction" value={qrOptions.ecc} onChange={(e) => setQrOptions((o) => ({ ...o, ecc: e.target.value }))}>
+                <MenuItem value="L">L (low)</MenuItem>
+                <MenuItem value="M">M (medium)</MenuItem>
+                <MenuItem value="Q">Q (quartile)</MenuItem>
+                <MenuItem value="H">H (high)</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField size="small" type="number" label="Size (px)" value={qrOptions.size} onChange={(e) => setQrOptions((o) => ({ ...o, size: Math.max(128, Math.min(1024, parseInt(e.target.value || '0', 10))) }))} />
+            <TextField size="small" type="number" label="Margin" value={qrOptions.margin} onChange={(e) => setQrOptions((o) => ({ ...o, margin: Math.max(0, Math.min(4, parseInt(e.target.value || '0', 10))) }))} />
+            <FormControlLabel control={<Switch size="small" checked={!!qrOptions.utm} onChange={(e) => setQrOptions((o) => ({ ...o, utm: e.target.checked }))} />} label="Append UTM (qr/linkgrove)" />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField size="small" type="color" label="FG" value={qrOptions.fg} onChange={(e) => setQrOptions((o) => ({ ...o, fg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
+              <TextField size="small" type="color" label="BG" value={qrOptions.bg} onChange={(e) => setQrOptions((o) => ({ ...o, bg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
+            </Stack>
+            <TextField size="small" label="Logo URL (PNG/JPG)" value={qrOptions.logo} onChange={(e) => setQrOptions((o) => ({ ...o, logo: e.target.value }))} placeholder="https://.../logo.png" error={!logoValid} helperText={!logoValid ? 'Use https and .png/.jpg/.jpeg' : ' '} />
+            <Box>
+              <Typography variant="caption" color={contrastOk ? 'success.main' : 'error.main'}>
+                Contrast: {contrastRatio.toFixed(2)} {contrastOk ? '(ok)' : `(too low, need ≥ ${CONTRAST_THRESHOLD})`}
+              </Typography>
+            </Box>
+            {qrDialog.link && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">Preview URL:</Typography>
+                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)}</Typography>
+                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
+                  {qrOptions.format === 'svg' ? (
+                    <img alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} style={{ maxWidth: '100%', height: 'auto' }} />
+                  ) : (
+                    <img alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} style={{ imageRendering: 'pixelated' }} />
+                  )}
+                </Box>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={copyQrImage} disabled={!contrastOk || !logoValid}>Copy image</Button>
+          <Button onClick={closeQrDialog}>Close</Button>
+          <Button variant="contained" onClick={downloadQr} disabled={!contrastOk || !logoValid}>Download</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

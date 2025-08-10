@@ -2,8 +2,12 @@ package com.linkgrove.api.service;
 
 import com.linkgrove.api.dto.DeviceStat;
 import com.linkgrove.api.dto.DevicesResponse;
+import com.linkgrove.api.dto.CountryStat;
+import com.linkgrove.api.dto.CountriesResponse;
 import com.linkgrove.api.dto.ReferrerStat;
 import com.linkgrove.api.dto.ReferrersResponse;
+import com.linkgrove.api.dto.SourceStat;
+import com.linkgrove.api.dto.SourcesResponse;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
@@ -35,6 +39,8 @@ public class AnalyticsService {
     private final LinkDeviceDailyAggregateRepository deviceAggregateRepository;
     private final LinkVariantDailyAggregateRepository variantAggregateRepository;
     private final LinkVariantRepository linkVariantRepository;
+    private final com.linkgrove.api.repository.LinkGeoDailyAggregateRepository geoAggregateRepository;
+    private final com.linkgrove.api.repository.LinkSourceDailyAggregateRepository sourceAggregateRepository;
 
     @Cacheable(value = "analytics", key = "#username + '_overview'")
     @Transactional(readOnly = true)
@@ -314,6 +320,86 @@ public class AnalyticsService {
         }
         list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
         return new DevicesResponse(username, days + " days", list);
+    }
+
+    @Cacheable(value = "analytics-countries-v1", key = "#username + ':' + #days")
+    @Transactional(readOnly = true)
+    public CountriesResponse getCountryBreakdown(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = geoAggregateRepository.findRange(user.getUsername(), start, end);
+        Map<String, Map<String, Long>> byCountry = new java.util.HashMap<>();
+        for (var r : rows) {
+            var m = byCountry.computeIfAbsent(r.getCountry(), k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        java.util.List<CountryStat> list = new java.util.ArrayList<>();
+        for (var e : byCountry.entrySet()) {
+            long clicks = e.getValue().getOrDefault("clicks", 0L);
+            long uniques = e.getValue().getOrDefault("uniqueVisitors", 0L);
+            list.add(new CountryStat(e.getKey(), clicks, uniques));
+        }
+        list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
+        return new CountriesResponse(username, days + " days", list);
+    }
+
+    @org.springframework.cache.annotation.Cacheable(value = "analytics-sources-v1", key = "#username + ':' + #days")
+    @Transactional(readOnly = true)
+    public SourcesResponse getSourceBreakdown(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = sourceAggregateRepository.findRange(user.getUsername(), start, end);
+        Map<String, Map<String, Long>> bySrc = new java.util.HashMap<>();
+        for (var r : rows) {
+            var m = bySrc.computeIfAbsent(r.getSource(), k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        java.util.List<SourceStat> list = new java.util.ArrayList<>();
+        for (var e : bySrc.entrySet()) {
+            long clicks = e.getValue().getOrDefault("clicks", 0L);
+            long uniques = e.getValue().getOrDefault("uniqueVisitors", 0L);
+            list.add(new SourceStat(e.getKey(), clicks, uniques));
+        }
+        list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
+        return new SourcesResponse(username, days + " days", list);
+    }
+
+    @org.springframework.cache.annotation.Cacheable(value = "analytics-sources-by-link-v1", key = "#username + ':' + #linkId + ':' + #days")
+    @Transactional(readOnly = true)
+    public SourcesResponse getSourceBreakdownByLink(String username, Long linkId, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Link link = linkRepository.findByIdAndUser(linkId, user)
+                .orElseThrow(() -> new RuntimeException("Link not found"));
+
+        java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
+
+        var rows = sourceAggregateRepository.findRangeForLink(user.getUsername(), link.getId(), start, end);
+        Map<String, Map<String, Long>> bySrc = new java.util.HashMap<>();
+        for (var r : rows) {
+            var m = bySrc.computeIfAbsent(r.getSource(), k -> new java.util.HashMap<>());
+            m.merge("clicks", r.getClicks(), Long::sum);
+            m.merge("uniqueVisitors", r.getUniqueVisitors(), Long::sum);
+        }
+        java.util.List<SourceStat> list = new java.util.ArrayList<>();
+        for (var e : bySrc.entrySet()) {
+            long clicks = e.getValue().getOrDefault("clicks", 0L);
+            long uniques = e.getValue().getOrDefault("uniqueVisitors", 0L);
+            list.add(new SourceStat(e.getKey(), clicks, uniques));
+        }
+        list.sort((a, b) -> Long.compare(b.getClicks(), a.getClicks()));
+        return new SourcesResponse(username, days + " days", list);
     }
 
     @Cacheable(value = "analytics-variants-v1", key = "#username + ':' + #days")

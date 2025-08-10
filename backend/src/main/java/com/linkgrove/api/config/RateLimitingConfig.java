@@ -34,7 +34,7 @@ public class RateLimitingConfig extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         String path = request.getRequestURI();
-        Rule rule = matchRule(path);
+        Rule rule = isQrPath(path) ? new Rule(10, 10) : matchRule(path);
         if (rule == null) {
             filterChain.doFilter(request, response);
             return;
@@ -68,6 +68,11 @@ public class RateLimitingConfig extends OncePerRequestFilter {
             }
         }
         return null;
+    }
+
+    private boolean isQrPath(String path) {
+        // Match expensive QR generation endpoints under /r/{id or a/alias}/qr.{ext}
+        return path != null && path.startsWith("/r/") && path.contains("/qr.");
     }
 
     private String getClientIp(HttpServletRequest request) {

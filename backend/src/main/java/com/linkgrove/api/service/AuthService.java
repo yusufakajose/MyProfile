@@ -3,6 +3,7 @@ package com.linkgrove.api.service;
 import com.linkgrove.api.dto.AuthResponse;
 import com.linkgrove.api.dto.LoginRequest;
 import com.linkgrove.api.dto.RegisterRequest;
+import com.linkgrove.api.exception.UnauthorizedException;
 import com.linkgrove.api.model.Role;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.RoleRepository;
@@ -64,10 +65,10 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+                .orElseThrow(() -> new UnauthorizedException("Invalid username or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid username or password");
+            throw new UnauthorizedException("Invalid username or password");
         }
 
         // Generate JWT token

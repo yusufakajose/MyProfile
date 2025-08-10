@@ -10,7 +10,7 @@ public class LinkNotFoundException extends RuntimeException {
     }
     
     public LinkNotFoundException(Long linkId) {
-        super("Link not found: " + linkId);
+        super("Link not found with ID: " + linkId);
     }
     
     public LinkNotFoundException(String message, Throwable cause) {

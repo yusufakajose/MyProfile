@@ -6,6 +6,7 @@ import com.linkgrove.api.exception.LinkNotFoundException;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.repository.LinkRepository;
 import com.linkgrove.api.repository.LinkVariantRepository;
+import com.linkgrove.api.dto.LinkAliasResolve;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -71,15 +72,15 @@ public class LinkRedirectService {
         return link.getUrl();
     }
 
-    @Cacheable(value = "linkRedirectsByAlias", key = "#alias")
+    @Cacheable(value = "linkAliasResolveV1", key = "#alias")
     @Transactional(readOnly = true)
-    public Link getLinkByAlias(String alias) {
+    public LinkAliasResolve getLinkByAlias(String alias) {
         Link link = linkRepository.findByAlias(alias)
                 .orElseThrow(() -> new LinkNotFoundException("Alias not found: " + alias));
         if (!link.getIsActive() || isOutsideSchedule(link)) {
             throw new LinkNotFoundException("Link is inactive for alias: " + alias);
         }
-        return link;
+        return new LinkAliasResolve(link.getId(), link.getUrl());
     }
 
     private boolean isOutsideSchedule(Link link) {
@@ -111,6 +112,14 @@ public class LinkRedirectService {
             // Get username from link (cached)
             String username = getLinkOwnerUsername(linkId);
 
+            // Extract marketing params
+            String utmSource = request.getParameter("utm_source");
+            String utmMedium = request.getParameter("utm_medium");
+            String utmCampaign = request.getParameter("utm_campaign");
+            String utmTerm = request.getParameter("utm_term");
+            String utmContent = request.getParameter("utm_content");
+            String source = request.getParameter("src");
+
             // Create click event
             LinkClickEvent event = LinkClickEvent.builder()
                     .linkId(linkId)
@@ -122,6 +131,12 @@ public class LinkRedirectService {
                     .sessionId(sessionId)
                     .targetUrl(targetUrl)
                     .variantId(com.linkgrove.api.util.RequestContext.getSelectedVariantId())
+                    .utmSource(utmSource)
+                    .utmMedium(utmMedium)
+                    .utmCampaign(utmCampaign)
+                    .utmTerm(utmTerm)
+                    .utmContent(utmContent)
+                    .source(source)
                     .build();
 
             // Publish to RabbitMQ asynchronously
@@ -152,7 +167,7 @@ public class LinkRedirectService {
         log.debug("Fetching link preview for: {}", linkId);
         
         Link link = linkRepository.findById(linkId)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException(linkId));
         
         Map<String, Object> preview = new HashMap<>();
         preview.put("id", link.getId());

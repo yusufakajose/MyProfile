@@ -18,6 +18,11 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:${SPRING_REDIS_HOST:localhost}}
+      port: ${SPRING_DATA_REDIS_PORT:${SPRING_REDIS_PORT:6379}}
+      timeout: 2000
 
 management:
   endpoints:
@@ -77,3 +82,9 @@ jwt:
 
 webhooks:
   maxRetriesPerDestinationPerDay: 100
+
+public:
+  base-url: ${PUBLIC_BASE_URL:}
+
+twitter:
+  site: ${TWITTER_SITE:}

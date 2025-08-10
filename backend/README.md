@@ -1,3 +1,37 @@
+QR code endpoints and options
+
+QR generation is available via redirect endpoints:
+
+- GET `/r/{linkId}/qr.png`
+- GET `/r/{linkId}/qr.svg`
+- GET `/r/a/{alias}/qr.png`
+- GET `/r/a/{alias}/qr.svg`
+
+Query params:
+
+- `size` (int, 128–1024, default 256)
+- `margin` (int, 0–4, default 1)
+- `fg` (hex RGB like `000000` or `#000000`)
+- `bg` (hex RGB like `ffffff` or `#ffffff`)
+- `ecc` (L/M/Q/H, default M)
+- `utm` (`1` to append `utm_medium=qr&utm_source=linkgrove&src=qr`)
+- `logo` (https URL ending with .png/.jpg/.jpeg)
+
+Constraints and behavior:
+
+- Colors: If foreground/background contrast is too low, the server falls back to black-on-white for scan reliability.
+- Colors: Custom `fg`/`bg` must have sufficient contrast. If contrast ratio < 2.5, the server returns HTTP 400 with a JSON error explaining the issue. Use a dark foreground on a light background.
+- Logo: Only HTTPS URLs and extensions .png/.jpg/.jpeg are accepted; extremely large images are ignored; logo is scaled to ~20% of QR.
+- Caching: Responses include strong ETag and `Cache-Control: public, max-age=86400, immutable`.
+- Content-Disposition filename is included for easier downloads.
+
+Error handling:
+
+- Invalid parameters (e.g., out-of-range size/margin, bad `ecc`) are clamped/sanitized.
+- If a parameter is explicitly invalid (e.g., unsupported logo scheme, insufficient color contrast), the server returns 400 with a JSON error.
+
+---
+
 Webhook receiver verification guide
 
 Verify each incoming webhook request using these steps (recommended window: 5–10 minutes):

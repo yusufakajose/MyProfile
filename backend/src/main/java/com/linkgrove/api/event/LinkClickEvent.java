@@ -64,4 +64,12 @@ public class LinkClickEvent implements Serializable {
      * Selected variant id if A/B variant was used (nullable)
      */
     private Long variantId;
+
+    // Optional UTM/source parameters extracted from the inbound short-link request
+    private String utmSource;
+    private String utmMedium;
+    private String utmCampaign;
+    private String utmTerm;
+    private String utmContent;
+    private String source; // e.g., "qr"
 }

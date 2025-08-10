@@ -93,5 +93,18 @@
 
 ---
 
+## TODO: Geo analytics follow-ups (local dev + ops)
+- [ ] Local enablement and docs
+  - [ ] Provide script to fetch MaxMind GeoLite2 Country DB and set env (Fish + Bash): `GEOIP_ENABLED=true`, `GEOIP_DB_PATH=/abs/path/GeoLite2-Country.mmdb`
+  - [ ] On boot, log a clear warning and expose actuator info if GeoIP is disabled
+- [ ] Admin/metrics
+  - [ ] Add `/api/admin/metrics/geo` to report GeoIP status, last processed click time, and top countries (last 24h)
+- [ ] Simulation utilities
+  - [ ] CLI script to generate sample clicks using `X-Forwarded-For` with well-known public IPs (e.g., 8.8.8.8, 1.1.1.1) via `/r/{id}` or `/r/a/{alias}`
+  - [ ] Note: LAN/private IPs (e.g., 192.168.x.x) won’t resolve to a country
+- [ ] Worker reliability
+  - [ ] Ensure RabbitMQ is started in dev and add a smoke test that verifies geo aggregates increment after a simulated click
+  - [ ] Add a health indicator/metric for the analytics worker (queue depth, last consume timestamp)
+
 ## Notes
 - Historical phase documents (PHASE2/3/5/6) and standards remain as archives/reference. Update only this `ROADMAP.md` going forward.

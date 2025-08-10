@@ -9,6 +9,8 @@ spring:
         format_sql: false
         default_schema: public
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: false
   
   # RabbitMQ configuration will be handled by Testcontainers
   rabbitmq:
@@ -29,10 +31,12 @@ spring:
   # Logging configuration for tests
 logging:
   level:
-    com.linkgrove.api: DEBUG
+    com.linkgrove.api: INFO
     org.springframework.amqp: WARN
     org.hibernate.SQL: WARN
     org.testcontainers: WARN
+    org.springframework.test.context: WARN
+    org.springframework.web: WARN
 
 # JWT configuration for tests
 jwt:

@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-const baseUrl = process.env.REACT_APP_API_URL
-  ? `${process.env.REACT_APP_API_URL}/api`
-  : 'http://localhost:8080/api';
+// Build a robust API base URL:
+// - If REACT_APP_API_URL is provided, accept either root (http://host) or already '/api'
+// - Otherwise default to localhost root
+const apiRoot = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const baseUrl = apiRoot.endsWith('/api') ? apiRoot : `${apiRoot}/api`;
 
 const client = axios.create({ baseURL: baseUrl });
 

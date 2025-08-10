@@ -15,6 +15,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
@@ -43,8 +44,21 @@ public class CacheConfig {
                         .fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
+        // Cache configs specialized per value type
+        RedisCacheConfiguration qrPngConfig = defaultConfig
+                .entryTtl(Duration.ofHours(1))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(RedisSerializer.byteArray()));
+
+        RedisCacheConfiguration qrSvgConfig = defaultConfig
+                .entryTtl(Duration.ofHours(1))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new StringRedisSerializer()));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
+                .withCacheConfiguration("qrPng", qrPngConfig)
+                .withCacheConfiguration("qrSvg", qrSvgConfig)
                 .withCacheConfiguration("publicProfiles", 
                     defaultConfig.entryTtl(Duration.ofMinutes(15)))
                 .withCacheConfiguration("analytics", 
@@ -56,6 +70,8 @@ public class CacheConfig {
                 .withCacheConfiguration("userLinks", 
                     defaultConfig.entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration("linkRedirects", 
+                    defaultConfig.entryTtl(Duration.ofMinutes(15)))
+                .withCacheConfiguration("linkAliasResolveV1",
                     defaultConfig.entryTtl(Duration.ofMinutes(15)))
                 .withCacheConfiguration("linkPreviews", 
                     defaultConfig.entryTtl(Duration.ofMinutes(30)))

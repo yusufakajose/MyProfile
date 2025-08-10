@@ -45,6 +45,8 @@ const AnalyticsDashboard = () => {
   const [topLinksData, setTopLinksData] = useState(null);
   const [referrersData, setReferrersData] = useState(null);
   const [devicesData, setDevicesData] = useState(null);
+  const [sourcesData, setSourcesData] = useState(null);
+  const [countriesData, setCountriesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState(7);
@@ -52,6 +54,7 @@ const AnalyticsDashboard = () => {
   const [perLinkSeries, setPerLinkSeries] = useState(null);
   const [variantsData, setVariantsData] = useState(null);
   const [perLinkVariantsData, setPerLinkVariantsData] = useState(null);
+  const [perLinkSourcesData, setPerLinkSourcesData] = useState(null);
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -68,7 +71,9 @@ const AnalyticsDashboard = () => {
         client.get('/analytics/top-links'),
         client.get(`/analytics/referrers?days=${timeRange}`),
         client.get(`/analytics/devices?days=${timeRange}`),
-        client.get(`/analytics/variants?days=${timeRange}`)
+        client.get(`/analytics/variants?days=${timeRange}`),
+        client.get(`/analytics/countries?days=${timeRange}`),
+        client.get(`/analytics/sources?days=${timeRange}`)
       ]);
 
       const allRejected = results.every(r => r.status === 'rejected');
@@ -115,6 +120,20 @@ const AnalyticsDashboard = () => {
         setVariantsData({ variants: [], period: `${timeRange} days` });
       }
 
+      // Countries
+      if (results[6]?.status === 'fulfilled') {
+        setCountriesData(results[6].value.data);
+      } else {
+        setCountriesData({ countries: [], period: `${timeRange} days` });
+      }
+
+      // Sources
+      if (results[7]?.status === 'fulfilled') {
+        setSourcesData(results[7].value.data);
+      } else {
+        setSourcesData({ sources: [], period: `${timeRange} days` });
+      }
+
       if (allRejected) {
         setError('Failed to load analytics data. Please try again.');
       }
@@ -154,6 +173,21 @@ const AnalyticsDashboard = () => {
       }
     };
     loadPerLinkVariants();
+  }, [selectedLinkId, timeRange]);
+
+  useEffect(() => {
+    const loadPerLinkSources = async () => {
+      setPerLinkSourcesData(null);
+      if (!selectedLinkId) return;
+      try {
+        const res = await client.get(`/analytics/sources/by-link?linkId=${selectedLinkId}&days=${timeRange}`);
+        setPerLinkSourcesData(res.data || { sources: [] });
+      } catch (e) {
+        console.error('Failed to load per-link sources', e);
+        setPerLinkSourcesData({ sources: [] });
+      }
+    };
+    loadPerLinkSources();
   }, [selectedLinkId, timeRange]);
 
   const buildCsv = (rows, columns) => {
@@ -494,6 +528,80 @@ const AnalyticsDashboard = () => {
           </Paper>
         </Grid>
 
+        {/* Countries Table */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="h6">Countries</Typography>
+              <Button size="small" onClick={() => downloadCsv(
+                `/analytics/export/countries?days=${timeRange}`,
+                `analytics_countries_${timeRange}d.csv`,
+                (countriesData?.countries || []),
+                [
+                  ['country', r => r.country],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]
+              )}>Export CSV</Button>
+            </Box>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Country</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {(countriesData?.countries || []).map((r, i) => (
+                  <Box component="tr" key={i}>
+                    <Box component="td" sx={{ py: 0.5 }}>{r.country}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Sources Table */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Typography variant="h6">Sources</Typography>
+              <Button size="small" onClick={() => downloadCsv(
+                `/analytics/export/sources?days=${timeRange}`,
+                `analytics_sources_${timeRange}d.csv`,
+                (sourcesData?.sources || []),
+                [
+                  ['source', r => r.source],
+                  ['clicks', r => r.clicks],
+                  ['uniqueVisitors', r => r.uniqueVisitors]
+                ]
+              )}>Export CSV</Button>
+            </Box>
+            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                </Box>
+              </Box>
+              <Box component="tbody">
+                {(sourcesData?.sources || []).map((r, i) => (
+                  <Box component="tr" key={i}>
+                    <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
         {/* Variants Table */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
@@ -564,6 +672,48 @@ const AnalyticsDashboard = () => {
                   {(perLinkVariantsData?.variants || []).map((r, i) => (
                     <Box component="tr" key={i}>
                       <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        )}
+
+        {/* Per-link Sources Table */}
+        {selectedLinkId && (
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h6">Sources for selected link</Typography>
+                <Button size="small" onClick={() => {
+                  if (!perLinkSourcesData?.sources) return;
+                  downloadCsv(
+                    `/analytics/export/sources/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
+                    `analytics_link_${selectedLinkId}_sources_${timeRange}d.csv`,
+                    perLinkSourcesData.sources,
+                    [
+                      ['source', r => r.source],
+                      ['clicks', r => r.clicks],
+                      ['uniqueVisitors', r => r.uniqueVisitors]
+                    ]
+                  );
+                }}>Export CSV</Button>
+              </Box>
+              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr">
+                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
+                  </Box>
+                </Box>
+                <Box component="tbody">
+                  {(perLinkSourcesData?.sources || []).map((r, i) => (
+                    <Box component="tr" key={i}>
+                      <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
                       <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
                       <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
                     </Box>
