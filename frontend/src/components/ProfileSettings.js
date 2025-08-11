@@ -11,7 +11,7 @@ const ProfileSettings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [username, setUsername] = useState('');
-  const { login, user: authUser, token } = useAuth();
+  const { login, user: authUser } = useAuth();
   const [themePrimaryColor, setThemePrimaryColor] = useState('');
   const [themeAccentColor, setThemeAccentColor] = useState('');
   const [themeBackgroundColor, setThemeBackgroundColor] = useState('');
@@ -38,7 +38,7 @@ const ProfileSettings = () => {
       }
     };
     load();
-  }, []);
+  }, [authUser?.username]);
 
   const save = async (e) => {
     e.preventDefault();

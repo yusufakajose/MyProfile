@@ -14,7 +14,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Divider,
 } from '@mui/material';
 import client from '../api/client';
 

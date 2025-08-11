@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -47,12 +47,11 @@ const LinkManager = () => {
   const [sort, setSort] = useState('order');
   const [dragIndex, setDragIndex] = useState(null);
   const [page, setPage] = useState(1);
-  const [size, setSize] = useState(12);
+  const [size] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ open: false, message: '' });
   const [qrDialog, setQrDialog] = useState({ open: false, link: null });
   const [qrOptions, setQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
-  const [qrPreviewUrl, setQrPreviewUrl] = useState('');
   const CONTRAST_THRESHOLD = 2.5; // match server
 
   const hexToRgb = (hex) => {
@@ -71,7 +70,7 @@ const LinkManager = () => {
     const darker = Math.min(L1, L2);
     return (lighter + 0.05) / (darker + 0.05);
   };
-  const contrastRatio = useMemo(() => computeContrast(qrOptions.fg, qrOptions.bg), [qrOptions.fg, qrOptions.bg]);
+  const contrastRatio = computeContrast(qrOptions.fg, qrOptions.bg);
   const contrastOk = contrastRatio >= CONTRAST_THRESHOLD;
   const logoValid = useMemo(() => {
     if (!qrOptions.logo) return true;
@@ -106,9 +105,9 @@ const LinkManager = () => {
     return form.title.trim() && /^https?:\/\//i.test(form.url.trim());
   }, [form]);
 
-  const load = async (nextPage = page, nextQuery = query) => {
+  const load = useCallback(async (nextPage, nextQuery) => {
     const params = new URLSearchParams({ page: String(nextPage - 1), size: String(size), status, sort });
-    if (nextQuery.trim()) params.set('q', nextQuery.trim());
+    if ((nextQuery || '').trim()) params.set('q', (nextQuery || '').trim());
     if (selectedTags.length) selectedTags.forEach(t => params.append('tags', t));
     const res = await client.get(`/links?${params.toString()}`);
     const data = res.data;
@@ -119,9 +118,9 @@ const LinkManager = () => {
       setLinks(data.content || []);
       setTotalPages((data.totalPages || 1));
     }
-  };
+  }, [selectedTags, size, sort, status]);
 
-  useEffect(() => { load(1, query); setPage(1); }, [query, size, selectedTags, status, sort]);
+  useEffect(() => { load(1, query); setPage(1); }, [query, selectedTags, status, sort, load]);
   useEffect(() => { (async () => { try { const r = await client.get('/links/tags'); setAllTags(r.data || []); } catch {} })(); }, []);
 
   const create = async (e) => {
@@ -135,7 +134,7 @@ const LinkManager = () => {
       if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
       await client.post('/links', payload);
       setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
-      await load();
+      await load(page, query);
     } finally {
       setLoading(false);
     }
@@ -143,7 +142,7 @@ const LinkManager = () => {
 
   const remove = async (id) => {
     await client.delete(`/links/${id}`);
-    await load();
+    await load(page, query);
   };
 
   const beginEdit = (link) => {
@@ -186,7 +185,7 @@ const LinkManager = () => {
     reordered.splice(target, 0, moved);
     setLinks(reordered);
     await client.put('/links/reorder', reordered.map(l => l.id));
-    await load();
+    await load(page, query);
   };
 
   const shortUrlFor = (id, alias) => alias ? `${redirectOrigin}/r/a/${encodeURIComponent(alias)}` : `${redirectOrigin}/r/${id}`;

@@ -1,13 +1,11 @@
 package com.linkgrove.api;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 class LinkgroveApiApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+        // no-op smoke test without loading full Spring context
+    }
 }

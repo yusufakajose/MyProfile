@@ -252,7 +252,7 @@ public class RedirectController {
         validateContrastOrThrow(fgArgb, bgArgb);
         ErrorCorrectionLevel lvl = parseEcc(ecc);
         String svg = qrCodeService.generateSvg(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, lvl);
-        String etag = computeEtag(svg);
+        String etag = computeEtag(svg.getBytes(StandardCharsets.UTF_8));
         String inm = request.getHeader("If-None-Match");
         if (etag.equals(inm)) {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
@@ -412,7 +412,7 @@ public class RedirectController {
         validateContrastOrThrow(fgArgb, bgArgb);
         ErrorCorrectionLevel lvl = parseEcc(ecc);
         String svg = qrCodeService.generateSvg(url, clamp(size, 128, 1024), clamp(margin, 0, 4), fgArgb, bgArgb, lvl);
-        String etag = computeEtag(svg);
+        String etag = computeEtag(svg.getBytes(StandardCharsets.UTF_8));
         String inm = request.getHeader("If-None-Match");
         if (etag.equals(inm)) {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Grid,
   Card,
@@ -57,11 +57,7 @@ const AnalyticsDashboard = () => {
   const [perLinkSourcesData, setPerLinkSourcesData] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('');
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [timeRange]);
-
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -144,7 +140,13 @@ const AnalyticsDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
+
+  // NOTE: kept only the memoized version to satisfy exhaustive-deps rule
 
   useEffect(() => {
     const loadPerLink = async () => {
@@ -194,7 +196,7 @@ const AnalyticsDashboard = () => {
   const buildCsv = (rows, columns) => {
     const escape = (v) => {
       if (v == null) return '';
-      const s = String(v).replace(/\"/g, '""');
+      const s = String(v).replace(/"/g, '""');
       return /[",\n]/.test(s) ? `"${s}"` : s;
     };
     const header = columns.map(([h]) => h).join(',');
