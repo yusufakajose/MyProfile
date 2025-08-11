@@ -1,6 +1,6 @@
 # MyProfile
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml)
 
 See `.github/workflows/ci.yml` for details.
 
