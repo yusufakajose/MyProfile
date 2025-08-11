@@ -93,7 +93,7 @@ CI=true npm run build
 
 ## API
 
-High‑level endpoint overview is in `API_SUMMARY.md`. Notable endpoints:
+Notable endpoints:
 
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/health`
 - Public profile: `GET /api/public/{username}`, `GET /api/public/meta/{username}`
