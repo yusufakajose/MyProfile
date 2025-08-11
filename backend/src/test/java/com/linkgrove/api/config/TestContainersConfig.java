@@ -34,7 +34,7 @@ public class TestContainersConfig implements DisposableBean {
     @SuppressWarnings("resource")
     public PostgreSQLContainer<?> postgresContainer() {
         if (postgresContainer == null || !postgresContainer.isRunning()) {
-            PostgreSQLContainer<?> newContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
+            PostgreSQLContainer<?> newContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15.8-alpine"))
                     .withDatabaseName("linkgrove_test")
                     .withUsername("test")
                     .withPassword("test");
@@ -53,7 +53,7 @@ public class TestContainersConfig implements DisposableBean {
     @SuppressWarnings("resource")
     public RabbitMQContainer rabbitContainer() {
         if (rabbitContainer == null || !rabbitContainer.isRunning()) {
-            RabbitMQContainer newContainer = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3-management-alpine"))
+            RabbitMQContainer newContainer = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13.6-management-alpine"))
                     .withEnv("RABBITMQ_DEFAULT_USER", "test")
                     .withEnv("RABBITMQ_DEFAULT_PASS", "test");
             newContainer.start();
@@ -69,7 +69,7 @@ public class TestContainersConfig implements DisposableBean {
     @SuppressWarnings("resource")
     public GenericContainer<?> redisContainer() {
         if (redisContainer == null || !redisContainer.isRunning()) {
-            GenericContainer<?> newContainer = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+            GenericContainer<?> newContainer = new GenericContainer<>(DockerImageName.parse("redis:7.2.4-alpine"))
                     .withExposedPorts(6379);
             newContainer.start();
             redisContainer = newContainer;
