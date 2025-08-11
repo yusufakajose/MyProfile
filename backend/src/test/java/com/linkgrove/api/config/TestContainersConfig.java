@@ -31,6 +31,7 @@ public class TestContainersConfig implements DisposableBean {
     @Bean
     @ServiceConnection
     @Primary
+    @SuppressWarnings("resource")
     public PostgreSQLContainer<?> postgresContainer() {
         if (postgresContainer == null || !postgresContainer.isRunning()) {
             PostgreSQLContainer<?> newContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15-alpine"))
@@ -49,6 +50,7 @@ public class TestContainersConfig implements DisposableBean {
     @Bean
     @ServiceConnection
     @Primary
+    @SuppressWarnings("resource")
     public RabbitMQContainer rabbitContainer() {
         if (rabbitContainer == null || !rabbitContainer.isRunning()) {
             RabbitMQContainer newContainer = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3-management-alpine"))
@@ -64,6 +66,7 @@ public class TestContainersConfig implements DisposableBean {
      * Redis container for rate limiting and caching tests
      */
     @Bean
+    @SuppressWarnings("resource")
     public GenericContainer<?> redisContainer() {
         if (redisContainer == null || !redisContainer.isRunning()) {
             GenericContainer<?> newContainer = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))

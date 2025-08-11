@@ -102,6 +102,7 @@ class QrAndSourcesIntegrationTest {
                 .andExpect(header().string("X-RateLimit-Policy", containsString("window=60")))
                 .andReturn();
         long dt1 = System.nanoTime() - t1;
+        assertThat("timing captured", dt1, greaterThanOrEqualTo(0L));
         String etagPng = png1.getResponse().getHeader("ETag");
         long t2 = System.nanoTime();
         mockMvc.perform(get("/r/" + linkId + "/qr.png")
@@ -115,6 +116,7 @@ class QrAndSourcesIntegrationTest {
                 .andExpect(header().string("X-RateLimit-Window", String.valueOf(60)))
                 .andExpect(header().string("X-RateLimit-Policy", containsString("window=60")));
         long dt2 = System.nanoTime() - t2;
+        assertThat("timing captured", dt2, greaterThanOrEqualTo(0L));
         // Note: Skip strict timing assertion to avoid flakiness in CI
 
         // Test QR SVG ETag + 304 and HEAD
