@@ -22,7 +22,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import { Link as LinkIcon } from '@mui/icons-material';
-import PersonIcon from '@mui/icons-material/Person';
 import WebhookIcon from '@mui/icons-material/Webhook';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import LogoutIcon from '@mui/icons-material/Logout';
