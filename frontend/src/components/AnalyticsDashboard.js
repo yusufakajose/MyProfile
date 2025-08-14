@@ -284,6 +284,8 @@ const AnalyticsDashboard = () => {
   const perLinkFilteredSources = sourceFilter ? perLinkAllSources.filter(s => (s.source || '').toLowerCase() === sourceFilter.toLowerCase()) : perLinkAllSources;
   const sourcesChartData = filteredSources.map(s => ({ name: s.source, value: s.clicks }));
   const perLinkSourcesChartData = perLinkFilteredSources.map(s => ({ name: s.source, value: s.clicks }));
+  const hasSourcesData = (sourcesData?.sources || []).length > 0;
+  const hasPerLinkSourcesData = (perLinkSourcesData?.sources || []).length > 0;
 
   if (loading) {
     return renderLoading();
@@ -318,8 +320,8 @@ const AnalyticsDashboard = () => {
         <Typography variant="h4" component="h1" gutterBottom sx={{ flexGrow: 1 }}>
           Analytics Overview
         </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: { sm: 'center' }, flexWrap: 'wrap' }}>
-          <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: { sm: 'center' }, flexWrap: 'wrap' }}>
+          <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 160 } }}>
             <InputLabel>Time Range</InputLabel>
             <Select
               value={timeRange}
@@ -331,7 +333,7 @@ const AnalyticsDashboard = () => {
               <MenuItem value={30}>Last 30 days</MenuItem>
             </Select>
           </FormControl>
-          <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 180 } }}>
+          <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: '100%', sm: 200 } }}>
             <InputLabel>Per-link</InputLabel>
             <Select
               value={selectedLinkId}
@@ -606,7 +608,7 @@ const AnalyticsDashboard = () => {
         </Grid>
 
         {/* Countries Table */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={hasSourcesData ? 6 : 12}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Countries</Typography>
@@ -644,7 +646,8 @@ const AnalyticsDashboard = () => {
           </Paper>
         </Grid>
 
-        {/* Sources Chart + Table */}
+        {/* Sources Chart + Table (hide when no data to avoid large gutter next to Countries) */}
+        {hasSourcesData && (
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -706,6 +709,7 @@ const AnalyticsDashboard = () => {
             </Box>
           </Paper>
         </Grid>
+        )}
 
         {/* Variants Table */}
         <Grid item xs={12} md={6}>
@@ -792,7 +796,7 @@ const AnalyticsDashboard = () => {
         )}
 
         {/* Per-link Sources Chart + Table */}
-        {selectedLinkId && (
+        {selectedLinkId && hasPerLinkSourcesData && (
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
