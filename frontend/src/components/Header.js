@@ -32,6 +32,8 @@ import { useAuth } from '../context/AuthContext';
 import { ColorModeContext } from '../theme/ColorModeContext';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -41,6 +43,9 @@ const Header = () => {
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const colorMode = React.useContext(ColorModeContext);
+  const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
+  const openUserMenu = (e) => setUserMenuAnchor(e.currentTarget);
+  const closeUserMenu = () => setUserMenuAnchor(null);
 
   const handleLogout = () => {
     logout();
@@ -154,23 +159,28 @@ const Header = () => {
                       {item.label}
                     </Link>
                   ))}
-                </>
-              )}
-              {!isSmall && (
-                <>
-                  <Button component={RouterLink} to="/links" variant="contained" size="small" sx={{ ml: 1 }}>
-                    Create Link
-                  </Button>
-                  <Typography variant="body2" sx={{ ml: 1, mr: 1, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>{user?.username || ''}</Typography>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                    {(user?.username || 'U').slice(0, 1).toUpperCase()}
-                  </Avatar>
-                  <Button variant="outlined" size="small" onClick={handleLogout} sx={{ ml: 1 }}>Logout</Button>
-                  <Tooltip title={`Switch to ${theme.palette.mode === 'light' ? 'dark' : 'light'} mode`}>
-                    <IconButton onClick={colorMode.toggleColorMode} sx={{ ml: 1 }} aria-label="toggle color mode">
-                      {theme.palette.mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, gap: 1 }}>
+                    <Button component={RouterLink} to="/links" variant="contained" size="small">
+                      Create Link
+                    </Button>
+                    <Tooltip title={`Switch to ${theme.palette.mode === 'light' ? 'dark' : 'light'} mode`}>
+                      <IconButton onClick={colorMode.toggleColorMode} aria-label="toggle color mode">
+                        {theme.palette.mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton onClick={openUserMenu} aria-label="open user menu">
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                        {(user?.username || 'U').slice(0, 1).toUpperCase()}
+                      </Avatar>
                     </IconButton>
-                  </Tooltip>
+                    <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={closeUserMenu} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                      <MenuItem component={RouterLink} to="/settings/profile" onClick={closeUserMenu}>Profile</MenuItem>
+                      <MenuItem onClick={() => { closeUserMenu(); handleLogout(); }}>
+                        <ListItemIcon sx={{ minWidth: 28 }}><LogoutIcon fontSize="small" /></ListItemIcon>
+                        Logout
+                      </MenuItem>
+                    </Menu>
+                  </Box>
                 </>
               )}
             </>
