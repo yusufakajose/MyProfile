@@ -5,8 +5,9 @@ import {
   CardContent,
   Typography,
   Box,
-  CircularProgress,
+  Stack,
   Alert,
+  Skeleton,
   Select,
   MenuItem,
   FormControl,
@@ -56,6 +57,45 @@ const AnalyticsDashboard = () => {
   const [perLinkVariantsData, setPerLinkVariantsData] = useState(null);
   const [perLinkSourcesData, setPerLinkSourcesData] = useState(null);
   const [sourceFilter, setSourceFilter] = useState('');
+
+  const renderLoading = () => (
+    <Box>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Skeleton variant="text" width={240} height={40} />
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Skeleton variant="rounded" width={120} height={40} />
+          <Skeleton variant="rounded" width={160} height={40} />
+          <Skeleton variant="rounded" width={200} height={40} />
+        </Box>
+      </Box>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {[...Array(4)].map((_, i) => (
+          <Grid item xs={12} sm={6} md={3} key={i}>
+            <Paper sx={{ p: 2 }}>
+              <Skeleton variant="text" width={120} />
+              <Skeleton variant="text" width={80} height={48} />
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} lg={8}>
+          <Paper sx={{ p: 3 }}>
+            <Skeleton variant="text" width={220} />
+            <Skeleton variant="rounded" height={300} />
+          </Paper>
+        </Grid>
+        <Grid item xs={12} lg={4}>
+          <Paper sx={{ p: 3 }}>
+            <Skeleton variant="text" width={220} />
+            <Skeleton variant="rounded" height={300} />
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
 
   const fetchAnalyticsData = useCallback(async () => {
     setLoading(true);
@@ -246,76 +286,73 @@ const AnalyticsDashboard = () => {
   const perLinkSourcesChartData = perLinkFilteredSources.map(s => ({ name: s.source, value: s.clicks }));
 
   if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
+    return renderLoading();
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
+      <Alert
+        severity="error"
+        sx={{ mb: 2 }}
+        action={<Button color="inherit" size="small" onClick={fetchAnalyticsData} aria-label="Retry loading analytics">Retry</Button>}
+      >
         {error}
       </Alert>
     );
   }
 
+  const timeseries = (selectedLinkId ? perLinkSeries : timeseriesData?.timeseriesData) || [];
+  const hasTimeseries = timeseries.length > 0;
+  const topLinks = topLinksData?.topLinks || [];
+
+  const renderNoData = (label = 'No data available') => (
+    <Box display="flex" alignItems="center" justifyContent="center" minHeight={160} sx={{ color: 'text.secondary' }}>
+      <Typography variant="body2">{label}</Typography>
+    </Box>
+  );
+
   return (
     <Box>
-      {/* Time Range Selector */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+      {/* Time Range & Controls (responsive) */}
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 3, alignItems: { xs: 'stretch', md: 'center' } }}>
+        <Typography variant="h4" component="h1" gutterBottom sx={{ flexGrow: 1 }}>
           Analytics Overview
         </Typography>
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Time Range</InputLabel>
-          <Select
-            value={timeRange}
-            label="Time Range"
-            onChange={(e) => setTimeRange(e.target.value)}
-          >
-            <MenuItem value={7}>Last 7 days</MenuItem>
-            <MenuItem value={14}>Last 14 days</MenuItem>
-            <MenuItem value={30}>Last 30 days</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Per-link</InputLabel>
-          <Select
-            value={selectedLinkId}
-            label="Per-link"
-            onChange={(e) => setSelectedLinkId(e.target.value)}
-          >
-            <MenuItem value="">All links</MenuItem>
-            {(topLinksData?.topLinks || []).map((l) => (
-              <MenuItem key={l.id} value={String(l.id)}>{l.title}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            onClick={() => downloadCsv(
-              `/analytics/export/timeseries?days=${timeRange}`,
-              `analytics_timeseries_${timeRange}d.csv`,
-              (timeseriesData?.timeseriesData || []),
-              [
-                ['date', r => r.date],
-                ['clicks', r => r.clicks],
-                ['uniqueVisitors', r => r.uniqueVisitors]
-              ]
-            )}
-          >
-            Export Timeseries CSV
-          </Button>
-          {selectedLinkId && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: { sm: 'center' }, flexWrap: 'wrap' }}>
+          <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+            <InputLabel>Time Range</InputLabel>
+            <Select
+              value={timeRange}
+              label="Time Range"
+              onChange={(e) => setTimeRange(e.target.value)}
+            >
+              <MenuItem value={7}>Last 7 days</MenuItem>
+              <MenuItem value={14}>Last 14 days</MenuItem>
+              <MenuItem value={30}>Last 30 days</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 180 } }}>
+            <InputLabel>Per-link</InputLabel>
+            <Select
+              value={selectedLinkId}
+              label="Per-link"
+              onChange={(e) => setSelectedLinkId(e.target.value)}
+            >
+              <MenuItem value="">All links</MenuItem>
+              {(topLinksData?.topLinks || []).map((l) => (
+                <MenuItem key={l.id} value={String(l.id)}>{l.title}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}>
             <Button
               variant="outlined"
+              size="small"
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
               onClick={() => downloadCsv(
-                `/analytics/export/timeseries/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
-                `analytics_link_${selectedLinkId}_timeseries_${timeRange}d.csv`,
-                (perLinkSeries || []),
+                `/analytics/export/timeseries?days=${timeRange}`,
+                `analytics_timeseries_${timeRange}d.csv`,
+                (timeseriesData?.timeseriesData || []),
                 [
                   ['date', r => r.date],
                   ['clicks', r => r.clicks],
@@ -323,28 +360,49 @@ const AnalyticsDashboard = () => {
                 ]
               )}
             >
-              Export Selected Link Timeseries CSV
+              Export Timeseries CSV
             </Button>
-          )}
-          <Button
-            variant="outlined"
-            onClick={() => downloadCsv(
-              `/analytics/export/top-links`,
-              `analytics_top_links.csv`,
-              (topLinksData?.topLinks || []),
-              [
-                ['id', r => r.id],
-                ['title', r => r.title],
-                ['url', r => r.url],
-                ['clickCount', r => r.clickCount],
-                ['displayOrder', r => r.displayOrder]
-              ]
+            {selectedLinkId && (
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+                onClick={() => downloadCsv(
+                  `/analytics/export/timeseries/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
+                  `analytics_link_${selectedLinkId}_timeseries_${timeRange}d.csv`,
+                  (perLinkSeries || []),
+                  [
+                    ['date', r => r.date],
+                    ['clicks', r => r.clicks],
+                    ['uniqueVisitors', r => r.uniqueVisitors]
+                  ]
+                )}
+              >
+                Export Selected Link Timeseries CSV
+              </Button>
             )}
-          >
-            Export Top Links CSV
-          </Button>
-        </Box>
-      </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              onClick={() => downloadCsv(
+                `/analytics/export/top-links`,
+                `analytics_top_links.csv`,
+                (topLinksData?.topLinks || []),
+                [
+                  ['id', r => r.id],
+                  ['title', r => r.title],
+                  ['url', r => r.url],
+                  ['clickCount', r => r.clickCount],
+                  ['displayOrder', r => r.displayOrder]
+                ]
+              )}
+            >
+              Export Top Links CSV
+            </Button>
+          </Stack>
+        </Stack>
+      </Stack>
 
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -421,29 +479,31 @@ const AnalyticsDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Click Trends ({timeRange} days)
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={(selectedLinkId ? perLinkSeries : timeseriesData?.timeseriesData) || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="clicks" 
-                  stroke="#8884d8" 
-                  strokeWidth={2}
-                  name="Clicks"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="uniqueVisitors" 
-                  stroke="#82ca9d" 
-                  strokeWidth={2}
-                  name="Unique Visitors"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {hasTimeseries ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={timeseries}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="clicks" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    name="Clicks"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="uniqueVisitors" 
+                    stroke="#82ca9d" 
+                    strokeWidth={2}
+                    name="Unique Visitors"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : renderNoData('No clicks recorded for the selected period')}
           </Paper>
         </Grid>
 
@@ -453,15 +513,17 @@ const AnalyticsDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Top Performing Links
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topLinksData?.topLinks || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="title" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="clickCount" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+            {topLinks.length ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topLinks}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="title" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="clickCount" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : renderNoData('No top links yet')}
           </Paper>
         </Grid>
 
@@ -470,7 +532,7 @@ const AnalyticsDashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Top Referrers</Typography>
-              <Button size="small" onClick={() => downloadCsv(
+              <Button size="small" aria-label="Export referrers CSV" onClick={() => downloadCsv(
                 `/analytics/export/referrers?days=${timeRange}`,
                 `analytics_referrers_${timeRange}d.csv`,
                 (referrersData?.referrers || []),
@@ -481,7 +543,8 @@ const AnalyticsDashboard = () => {
                 ]
               )}>Export CSV</Button>
             </Box>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <Box component="thead">
                 <Box component="tr">
                   <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Referrer</Box>
@@ -498,6 +561,7 @@ const AnalyticsDashboard = () => {
                   </Box>
                 ))}
               </Box>
+              </Box>
             </Box>
           </Paper>
         </Grid>
@@ -507,7 +571,7 @@ const AnalyticsDashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Devices</Typography>
-              <Button size="small" onClick={() => downloadCsv(
+              <Button size="small" aria-label="Export devices CSV" onClick={() => downloadCsv(
                 `/analytics/export/devices?days=${timeRange}`,
                 `analytics_devices_${timeRange}d.csv`,
                 (devicesData?.devices || []),
@@ -518,7 +582,8 @@ const AnalyticsDashboard = () => {
                 ]
               )}>Export CSV</Button>
             </Box>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <Box component="thead">
                 <Box component="tr">
                   <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Device</Box>
@@ -535,6 +600,7 @@ const AnalyticsDashboard = () => {
                   </Box>
                 ))}
               </Box>
+              </Box>
             </Box>
           </Paper>
         </Grid>
@@ -544,7 +610,7 @@ const AnalyticsDashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Countries</Typography>
-              <Button size="small" onClick={() => downloadCsv(
+              <Button size="small" aria-label="Export countries CSV" onClick={() => downloadCsv(
                 `/analytics/export/countries?days=${timeRange}`,
                 `analytics_countries_${timeRange}d.csv`,
                 (countriesData?.countries || []),
@@ -555,7 +621,8 @@ const AnalyticsDashboard = () => {
                 ]
               )}>Export CSV</Button>
             </Box>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
               <Box component="thead">
                 <Box component="tr">
                   <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Country</Box>
@@ -572,6 +639,7 @@ const AnalyticsDashboard = () => {
                   </Box>
                 ))}
               </Box>
+              </Box>
             </Box>
           </Paper>
         </Grid>
@@ -581,7 +649,7 @@ const AnalyticsDashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Sources</Typography>
-              <Button size="small" onClick={() => downloadCsv(
+              <Button size="small" aria-label="Export sources CSV" onClick={() => downloadCsv(
                 `/analytics/export/sources?days=${timeRange}`,
                 `analytics_sources_${timeRange}d.csv`,
                 (sourcesData?.sources || []),
@@ -612,22 +680,24 @@ const AnalyticsDashboard = () => {
                 <Bar dataKey="value" name="Clicks" fill="#00C49F" />
               </BarChart>
             </ResponsiveContainer>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-              <Box component="thead">
-                <Box component="tr">
-                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
-                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
-                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
-                </Box>
-              </Box>
-              <Box component="tbody">
-                {filteredSources.map((r, i) => (
-                  <Box component="tr" key={i}>
-                    <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
-                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
-                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr">
+                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
                   </Box>
-                ))}
+                </Box>
+                <Box component="tbody">
+                  {filteredSources.map((r, i) => (
+                    <Box component="tr" key={i}>
+                      <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                    </Box>
+                  ))}
+                </Box>
               </Box>
             </Box>
           </Paper>
@@ -638,7 +708,7 @@ const AnalyticsDashboard = () => {
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="h6">Variants</Typography>
-              <Button size="small" onClick={() => {
+              <Button size="small" aria-label="Export variants CSV" onClick={() => {
                 if (!variantsData?.variants) return;
                 const csv = buildCsv(variantsData.variants, [
                   ['variantId', r => r.variantId],
@@ -649,22 +719,24 @@ const AnalyticsDashboard = () => {
                 triggerDownload(csv, `analytics_variants_${timeRange}d.csv`);
               }}>Export CSV</Button>
             </Box>
-            <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-              <Box component="thead">
-                <Box component="tr">
-                  <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
-                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
-                  <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
-                </Box>
-              </Box>
-              <Box component="tbody">
-                {(variantsData?.variants || []).map((r, i) => (
-                  <Box component="tr" key={i}>
-                    <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
-                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
-                    <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+              <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
+                <Box component="thead">
+                  <Box component="tr">
+                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
                   </Box>
-                ))}
+                </Box>
+                <Box component="tbody">
+                  {(variantsData?.variants || []).map((r, i) => (
+                    <Box component="tr" key={i}>
+                      <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                    </Box>
+                  ))}
+                </Box>
               </Box>
             </Box>
           </Paper>
@@ -676,7 +748,7 @@ const AnalyticsDashboard = () => {
             <Paper sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography variant="h6">Variants for selected link</Typography>
-                <Button size="small" onClick={() => {
+                <Button size="small" aria-label="Export selected link variants CSV" onClick={() => {
                   if (!perLinkVariantsData?.variants) return;
                   downloadCsv(
                     `/analytics/export/variants/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
@@ -691,22 +763,24 @@ const AnalyticsDashboard = () => {
                   );
                 }}>Export CSV</Button>
               </Box>
-              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                <Box component="thead">
-                  <Box component="tr">
-                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
-                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
-                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
-                  </Box>
-                </Box>
-                <Box component="tbody">
-                  {(perLinkVariantsData?.variants || []).map((r, i) => (
-                    <Box component="tr" key={i}>
-                      <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
-                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
-                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+              <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
+                  <Box component="thead">
+                    <Box component="tr">
+                      <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Variant</Box>
+                      <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                      <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
                     </Box>
-                  ))}
+                  </Box>
+                  <Box component="tbody">
+                    {(perLinkVariantsData?.variants || []).map((r, i) => (
+                      <Box component="tr" key={i}>
+                        <Box component="td" sx={{ py: 0.5 }}>{r.variantTitle || `(id ${r.variantId})`}</Box>
+                        <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                        <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             </Paper>
@@ -719,7 +793,7 @@ const AnalyticsDashboard = () => {
             <Paper sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography variant="h6">Sources for selected link</Typography>
-                <Button size="small" onClick={() => {
+                <Button size="small" aria-label="Export selected link sources CSV" onClick={() => {
                   if (!perLinkSourcesData?.sources) return;
                   downloadCsv(
                     `/analytics/export/sources/by-link?linkId=${selectedLinkId}&days=${timeRange}`,
@@ -742,22 +816,24 @@ const AnalyticsDashboard = () => {
                   <Bar dataKey="value" name="Clicks" fill="#0088FE" />
                 </BarChart>
               </ResponsiveContainer>
-              <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                <Box component="thead">
-                  <Box component="tr">
-                    <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
-                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
-                    <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
-                  </Box>
-                </Box>
-                <Box component="tbody">
-                  {perLinkFilteredSources.map((r, i) => (
-                    <Box component="tr" key={i}>
-                      <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
-                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
-                      <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+              <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
+                  <Box component="thead">
+                    <Box component="tr">
+                      <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Source</Box>
+                      <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Clicks</Box>
+                      <Box component="th" sx={{ textAlign: 'right', pb: 1 }}>Uniques</Box>
                     </Box>
-                  ))}
+                  </Box>
+                  <Box component="tbody">
+                    {perLinkFilteredSources.map((r, i) => (
+                      <Box component="tr" key={i}>
+                        <Box component="td" sx={{ py: 0.5 }}>{r.source}</Box>
+                        <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.clicks}</Box>
+                        <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>{r.uniqueVisitors}</Box>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             </Paper>

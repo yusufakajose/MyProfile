@@ -1,14 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
+import AddIcon from '@mui/icons-material/Add';
 import client from '../api/client';
 
 const Favicon = ({ url, size = 18 }) => {
@@ -52,6 +54,8 @@ const LinkManager = () => {
   const [toast, setToast] = useState({ open: false, message: '' });
   const [qrDialog, setQrDialog] = useState({ open: false, link: null });
   const [qrOptions, setQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, link: null });
+  const createFormRef = useRef(null);
   const CONTRAST_THRESHOLD = 2.5; // match server
 
   const hexToRgb = (hex) => {
@@ -101,8 +105,21 @@ const LinkManager = () => {
     }
   }, []);
 
+  const isValidHttpUrl = (s) => {
+    try {
+      const u = new URL(s);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+  const isValidAlias = (s) => !s || /^[a-z0-9-_]{1,60}$/i.test(s);
   const canCreate = useMemo(() => {
-    return form.title.trim() && /^https?:\/\//i.test(form.url.trim());
+    return (
+      form.title.trim() &&
+      isValidHttpUrl((form.url || '').trim()) &&
+      isValidAlias((form.alias || '').trim())
+    );
   }, [form]);
 
   const load = useCallback(async (nextPage, nextQuery) => {
@@ -135,6 +152,7 @@ const LinkManager = () => {
       await client.post('/links', payload);
       setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
       await load(page, query);
+      setToast({ open: true, message: 'Link added' });
     } finally {
       setLoading(false);
     }
@@ -143,6 +161,7 @@ const LinkManager = () => {
   const remove = async (id) => {
     await client.delete(`/links/${id}`);
     await load(page, query);
+    setToast({ open: true, message: 'Link deleted' });
   };
 
   const beginEdit = (link) => {
@@ -164,6 +183,7 @@ const LinkManager = () => {
     await client.put(`/links/${id}`, payload);
     setEditing(null);
     await load();
+    setToast({ open: true, message: 'Link saved' });
   };
 
   const toggleActive = async (link) => {
@@ -368,13 +388,16 @@ const LinkManager = () => {
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 2 }}>Your Links</Typography>
-      <Card sx={{ mb: 3 }}>
+      <Box sx={{ position: 'fixed', right: 16, bottom: 16, display: { xs: 'block', sm: 'none' }, zIndex: 1200 }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => createFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} sx={{ borderRadius: 999 }}>New link</Button>
+      </Box>
+      <Card sx={{ mb: 3 }} ref={createFormRef}>
         <CardContent>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} component="form" onSubmit={create}>
             <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} />
-            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" />
+            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!form.url && !isValidHttpUrl(form.url)} helperText={!!form.url && !isValidHttpUrl(form.url) ? 'Enter a valid http(s) URL' : ' '} />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
-            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" />
+            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" error={!isValidAlias(form.alias || '')} helperText={!isValidAlias(form.alias || '') ? 'Use letters, numbers, - and _ (max 60)' : ' '} />
             <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
             <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
             <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
@@ -431,6 +454,19 @@ const LinkManager = () => {
       </Card>
 
       <Grid container spacing={2}>
+        {links.length === 0 && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Stack spacing={1} alignItems="flex-start">
+                  <Typography variant="subtitle1">No links yet</Typography>
+                  <Typography variant="body2" color="text.secondary">Create your first link to get started.</Typography>
+                  <Button variant="contained" onClick={() => createFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Create link</Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
         {links.map((l, idx) => (
           <Grid
             item
@@ -450,9 +486,9 @@ const LinkManager = () => {
                     {editing === l.id ? (
                       <Stack spacing={1}>
                         <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} />
+                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editForm.url && !isValidHttpUrl(editForm.url)} helperText={!!editForm.url && !isValidHttpUrl(editForm.url) ? 'Enter a valid http(s) URL' : ' '} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" />
+                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" error={!isValidAlias(editForm.alias || '')} helperText={!isValidAlias(editForm.alias || '') ? 'Use letters, numbers, - and _ (max 60)' : ' '} />
                         <TextField size="small" label="Tags (comma separated)" value={(editForm.tags || []).join(', ')} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="news, personal" />
                         <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} />
                         <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} />
@@ -491,13 +527,16 @@ const LinkManager = () => {
                     )}
                   </Box>
                   <Stack direction="column" spacing={0.5} alignItems="center">
-                    <IconButton size="small" onClick={() => move(idx, -1)} aria-label="move up"><ArrowUpwardIcon fontSize="inherit" /></IconButton>
+                    <IconButton size="small" onClick={() => move(idx, -1)} aria-label="move up" disabled={idx === 0}><ArrowUpwardIcon fontSize="inherit" /></IconButton>
                     {editing === l.id ? (
-                      <IconButton color="primary" onClick={() => saveEdit(l.id)} aria-label="save"><SaveIcon /></IconButton>
+                      <>
+                        <IconButton color="primary" onClick={() => saveEdit(l.id)} aria-label="save" disabled={!(editForm.title || '').trim() || !isValidHttpUrl(editForm.url || '') || !isValidAlias(editForm.alias || '')}><SaveIcon /></IconButton>
+                        <IconButton onClick={() => { setEditing(null); }} aria-label="cancel"><CloseIcon /></IconButton>
+                      </>
                     ) : (
                       <IconButton onClick={() => beginEdit(l)} aria-label="edit"><EditIcon /></IconButton>
                     )}
-                    <IconButton color="error" onClick={() => remove(l.id)} aria-label="delete"><DeleteIcon /></IconButton>
+                    <IconButton color="error" onClick={() => setDeleteDialog({ open: true, link: l })} aria-label="delete"><DeleteIcon /></IconButton>
                     <Tooltip title="Copy short link">
                       <IconButton onClick={() => copyShort(l.id, l.alias)} aria-label="copy short link"><ContentCopyIcon fontSize="small" /></IconButton>
                     </Tooltip>
@@ -507,7 +546,7 @@ const LinkManager = () => {
                     <Tooltip title="Get QR code">
                       <IconButton onClick={() => openQrDialog(l)} aria-label="get qr"><QrCode2Icon fontSize="small" /></IconButton>
                     </Tooltip>
-                    <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down"><ArrowDownwardIcon fontSize="inherit" /></IconButton>
+                    <IconButton size="small" onClick={() => move(idx, 1)} aria-label="move down" disabled={idx === links.length - 1}><ArrowDownwardIcon fontSize="inherit" /></IconButton>
                   </Stack>
                 </Stack>
               </CardContent>
@@ -525,46 +564,48 @@ const LinkManager = () => {
                     <Button variant="contained" size="small" onClick={() => addVariant(l.id)}>Add Variant</Button>
                   </Stack>
                   {/* Variants list */}
-                  <Box component="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <Box component="thead">
-                      <Box component="tr">
-                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Title</Box>
-                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>URL</Box>
-                        <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Description</Box>
-                        <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 120 }}>Weight</Box>
-                        <Box component="th" sx={{ textAlign: 'center', pb: 1, width: 120 }}>Active</Box>
-                        <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 160 }}>Actions</Box>
-                      </Box>
-                    </Box>
-                    <Box component="tbody">
-                      {(variantsByLink[l.id] || []).map((v) => (
-                        <Box component="tr" key={v.id}>
-                          <Box component="td" sx={{ py: 0.5 }}>
-                            <TextField size="small" value={(variantEdits[v.id]?.title) ?? v.title} onChange={(e) => setVariantEditField(v.id, 'title', e.target.value)} />
-                          </Box>
-                          <Box component="td" sx={{ py: 0.5 }}>
-                            <TextField size="small" value={(variantEdits[v.id]?.url) ?? v.url} onChange={(e) => setVariantEditField(v.id, 'url', e.target.value)} sx={{ minWidth: 220 }} />
-                          </Box>
-                          <Box component="td" sx={{ py: 0.5 }}>
-                            <TextField size="small" value={(variantEdits[v.id]?.description) ?? (v.description || '')} onChange={(e) => setVariantEditField(v.id, 'description', e.target.value)} sx={{ minWidth: 200 }} />
-                          </Box>
-                          <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
-                            <TextField size="small" type="number" inputProps={{ min: 0 }} value={(variantEdits[v.id]?.weight) ?? v.weight} onChange={(e) => setVariantEditField(v.id, 'weight', e.target.value)} sx={{ width: 100 }} />
-                          </Box>
-                          <Box component="td" sx={{ py: 0.5, textAlign: 'center' }}>
-                            <Switch size="small" checked={(variantEdits[v.id]?.isActive) ?? v.isActive} onChange={(e) => setVariantEditField(v.id, 'isActive', e.target.checked)} />
-                          </Box>
-                          <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
-                            <Stack direction="row" spacing={1} justifyContent="flex-end">
-                              <Button size="small" variant="outlined" onClick={() => saveVariant(l.id, v)}>Save</Button>
-                              <Button size="small" color="error" variant="text" onClick={() => deleteVariant(l.id, v.id)}>Delete</Button>
-                            </Stack>
-                          </Box>
+                  <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                    <Box component="table" sx={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
+                      <Box component="thead">
+                        <Box component="tr">
+                          <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Title</Box>
+                          <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>URL</Box>
+                          <Box component="th" sx={{ textAlign: 'left', pb: 1 }}>Description</Box>
+                          <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 120 }}>Weight</Box>
+                          <Box component="th" sx={{ textAlign: 'center', pb: 1, width: 120 }}>Active</Box>
+                          <Box component="th" sx={{ textAlign: 'right', pb: 1, width: 160 }}>Actions</Box>
                         </Box>
-                      ))}
-                      {(variantsByLink[l.id] || []).length === 0 && (
-                        <Box component="tr"><Box component="td" colSpan={6} sx={{ py: 1, color: 'text.secondary' }}>No variants yet</Box></Box>
-                      )}
+                      </Box>
+                      <Box component="tbody">
+                        {(variantsByLink[l.id] || []).map((v) => (
+                          <Box component="tr" key={v.id}>
+                            <Box component="td" sx={{ py: 0.5 }}>
+                              <TextField size="small" value={(variantEdits[v.id]?.title) ?? v.title} onChange={(e) => setVariantEditField(v.id, 'title', e.target.value)} />
+                            </Box>
+                            <Box component="td" sx={{ py: 0.5 }}>
+                              <TextField size="small" value={(variantEdits[v.id]?.url) ?? v.url} onChange={(e) => setVariantEditField(v.id, 'url', e.target.value)} sx={{ minWidth: 220 }} />
+                            </Box>
+                            <Box component="td" sx={{ py: 0.5 }}>
+                              <TextField size="small" value={(variantEdits[v.id]?.description) ?? (v.description || '')} onChange={(e) => setVariantEditField(v.id, 'description', e.target.value)} sx={{ minWidth: 200 }} />
+                            </Box>
+                            <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
+                              <TextField size="small" type="number" inputProps={{ min: 0 }} value={(variantEdits[v.id]?.weight) ?? v.weight} onChange={(e) => setVariantEditField(v.id, 'weight', e.target.value)} sx={{ width: 100 }} />
+                            </Box>
+                            <Box component="td" sx={{ py: 0.5, textAlign: 'center' }}>
+                              <Switch size="small" checked={(variantEdits[v.id]?.isActive) ?? v.isActive} onChange={(e) => setVariantEditField(v.id, 'isActive', e.target.checked)} />
+                            </Box>
+                            <Box component="td" sx={{ py: 0.5, textAlign: 'right' }}>
+                              <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                <Button size="small" variant="outlined" onClick={() => saveVariant(l.id, v)}>Save</Button>
+                                <Button size="small" color="error" variant="text" onClick={() => deleteVariant(l.id, v.id)}>Delete</Button>
+                              </Stack>
+                            </Box>
+                          </Box>
+                        ))}
+                        {(variantsByLink[l.id] || []).length === 0 && (
+                          <Box component="tr"><Box component="td" colSpan={6} sx={{ py: 1, color: 'text.secondary' }}>No variants yet</Box></Box>
+                        )}
+                      </Box>
                     </Box>
                   </Box>
                 </CardContent>
@@ -648,6 +689,20 @@ const LinkManager = () => {
           <Button onClick={copyQrImage} disabled={!contrastOk || !logoValid}>Copy image</Button>
           <Button onClick={closeQrDialog}>Close</Button>
           <Button variant="contained" onClick={downloadQr} disabled={!contrastOk || !logoValid}>Download</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, link: null })} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete link?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">This action cannot be undone.</Typography>
+          {deleteDialog.link && (
+            <Typography variant="subtitle2" sx={{ mt: 1 }}>{deleteDialog.link.title}</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog({ open: false, link: null })}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={async () => { const id = deleteDialog.link?.id; setDeleteDialog({ open: false, link: null }); if (id != null) await remove(id); }}>Delete</Button>
         </DialogActions>
       </Dialog>
     </Box>

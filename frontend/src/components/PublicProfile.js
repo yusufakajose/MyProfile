@@ -17,6 +17,7 @@ import {
   Menu,
   MenuItem,
   Snackbar,
+  Stack,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import LinkIcon from '@mui/icons-material/Link';
@@ -256,8 +257,8 @@ const PublicProfile = () => {
               <Card elevation={3} sx={{ borderRadius: 16, backgroundColor: '#fff', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)', transition: 'transform 120ms ease, box-shadow 120ms ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(2,6,23,0.07), 0 4px 12px rgba(2,6,23,0.06)' }, '&:active': { transform: 'translateY(0)', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)' } }}>
                 <CardActionArea onClick={() => handleLinkClick(link)} sx={{ borderRadius: 2 }}>
                   <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Box>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+                      <Box sx={{ minWidth: 0 }}>
                         <Box display="flex" alignItems="center" gap={1}>
                           <Favicon url={link.url} size={20} />
                           <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
@@ -269,22 +270,22 @@ const PublicProfile = () => {
                         )}
                         <Box display="flex" alignItems="center" gap={1} mt={0.5}>
                           <LinkIcon fontSize="small" sx={{ color: accent }} />
-                          <Typography variant="caption" sx={{ color: accent }}>
+                          <Typography variant="caption" sx={{ color: accent, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                             {link.url}
                           </Typography>
                         </Box>
                       </Box>
-                      <Box display="flex" alignItems="center" gap={1}>
+                      <Stack direction="row" spacing={1} sx={{ mt: { xs: 1, sm: 0 }, alignSelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
                         <Tooltip title="Share link">
                           <IconButton size="small" onClick={(e) => { e.stopPropagation(); openLinkShareMenu(e, link); }}>
                             <ShareIcon />
                           </IconButton>
                         </Tooltip>
-                        <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary }}>
+                        <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary, flexGrow: { xs: 1, sm: 0 } }}>
                           Open
                         </Button>
-                      </Box>
-                    </Box>
+                      </Stack>
+                    </Stack>
                   </CardContent>
                 </CardActionArea>
               </Card>

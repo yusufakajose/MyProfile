@@ -96,7 +96,7 @@ const ProfileSettings = () => {
             <Box>
               <Button variant="outlined" onClick={saveUsername} disabled={loading || !username || username === authUser?.username}>Update Username</Button>
             </Box>
-            <Box display="flex" alignItems="center" gap={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }}>
               <Avatar src={profileImageUrl || undefined} sx={{ width: 64, height: 64 }} />
               <TextField
                 label="Avatar URL"
@@ -104,7 +104,7 @@ const ProfileSettings = () => {
                 onChange={(e) => setProfileImageUrl(e.target.value)}
                 fullWidth
               />
-            </Box>
+            </Stack>
             <TextField
               label="Display Name"
               value={displayName}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -14,6 +14,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Snackbar,
+  Alert,
+  LinearProgress,
 } from '@mui/material';
 import client from '../api/client';
 
@@ -24,6 +27,17 @@ const WebhookSettings = () => {
   const [recent, setRecent] = useState([]);
   const [dlq, setDlq] = useState([]);
   const [loadingLists, setLoadingLists] = useState(false);
+  const [notice, setNotice] = useState({ open: false, message: '', severity: 'success' });
+
+  const isValidUrl = useMemo(() => {
+    if (!url) return true; // allow empty to disable webhooks
+    try {
+      const u = new URL(url);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, [url]);
 
   const loadConfig = useCallback(async () => {
     try {
@@ -35,9 +49,16 @@ const WebhookSettings = () => {
   }, []);
 
   const saveConfig = async () => {
+    if (!isValidUrl) {
+      setNotice({ open: true, message: 'Please enter a valid URL', severity: 'error' });
+      return;
+    }
     setSaving(true);
     try {
       await client.post('/webhooks/config', { url, isActive: active });
+      setNotice({ open: true, message: 'Webhook settings saved', severity: 'success' });
+    } catch (e) {
+      setNotice({ open: true, message: e?.response?.data?.message || 'Failed to save settings', severity: 'error' });
     } finally {
       setSaving(false);
     }
@@ -73,30 +94,34 @@ const WebhookSettings = () => {
   }, [loadConfig, loadDeliveries]);
 
   const renderTable = (rows) => (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>When</TableCell>
-          <TableCell>Status</TableCell>
-          <TableCell>Error</TableCell>
-          <TableCell>Event</TableCell>
-          <TableCell align="right">Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {(rows || []).map((r) => (
-          <TableRow key={r.id} hover>
-            <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</TableCell>
-            <TableCell>{r.statusCode}</TableCell>
-            <TableCell>{r.errorMessage || ''}</TableCell>
-            <TableCell>{r.eventType}</TableCell>
-            <TableCell align="right">
-              <Button size="small" onClick={() => resend(r.id)}>Resend</Button>
-            </TableCell>
+    (rows && rows.length > 0) ? (
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>When</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Error</TableCell>
+            <TableCell>Event</TableCell>
+            <TableCell align="right">Actions</TableCell>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHead>
+        <TableBody>
+          {(rows || []).map((r) => (
+            <TableRow key={r.id} hover>
+              <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</TableCell>
+              <TableCell>{r.statusCode}</TableCell>
+              <TableCell>{r.errorMessage || ''}</TableCell>
+              <TableCell>{r.eventType}</TableCell>
+              <TableCell align="right">
+                <Button size="small" onClick={() => resend(r.id)}>Resend</Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    ) : (
+      <Typography variant="body2" color="text.secondary">No deliveries yet</Typography>
+    )
   );
 
   return (
@@ -111,12 +136,14 @@ const WebhookSettings = () => {
               onChange={(e) => setUrl(e.target.value)}
               sx={{ flex: 1 }}
               placeholder="https://example.com/webhooks/link-click"
+              error={!isValidUrl}
+              helperText={!isValidUrl ? 'Enter a valid http(s) URL or leave empty to disable' : ' '}
             />
             <FormControlLabel
               control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />}
               label={active ? 'Active' : 'Inactive'}
             />
-            <Button variant="contained" disabled={saving} onClick={saveConfig}>Save</Button>
+            <Button variant="contained" disabled={saving || !isValidUrl} onClick={saveConfig}>Save</Button>
           </Stack>
         </CardContent>
       </Card>
@@ -125,6 +152,7 @@ const WebhookSettings = () => {
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 1 }}>Recent Deliveries</Typography>
+            {loadingLists && <LinearProgress sx={{ mb: 1 }} />}
             {renderTable(recent)}
           </CardContent>
         </Card>
@@ -134,10 +162,20 @@ const WebhookSettings = () => {
               <Typography variant="h6">Dead-letter Queue</Typography>
               <Button size="small" onClick={resendAllDlq} disabled={loadingLists || dlq.length === 0}>Resend all</Button>
             </Stack>
+            {loadingLists && <LinearProgress sx={{ mb: 1 }} />}
             {renderTable(dlq)}
           </CardContent>
         </Card>
       </GridLikeTwoCols>
+
+      <Snackbar
+        open={notice.open}
+        autoHideDuration={2500}
+        onClose={() => setNotice({ open: false, message: '', severity: 'success' })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={notice.severity} sx={{ width: '100%' }}>{notice.message}</Alert>
+      </Snackbar>
     </Box>
   );
 };
