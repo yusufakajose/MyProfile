@@ -38,7 +38,7 @@ function App() {
         {!isPublicRoute && <Header />}
         {/* Sticky AppBar doesn't need extra Toolbar spacer or Divider */}
         {!isPublicRoute ? (
-          <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+          <Container id="main" maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
             <Routes>
             <Route
               path="/"

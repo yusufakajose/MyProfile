@@ -306,7 +306,7 @@ const AnalyticsDashboard = () => {
   const topLinks = topLinksData?.topLinks || [];
 
   const renderNoData = (label = 'No data available') => (
-    <Box display="flex" alignItems="center" justifyContent="center" minHeight={160} sx={{ color: 'text.secondary' }}>
+    <Box display="flex" alignItems="center" justifyContent="center" sx={{ color: 'text.secondary', py: 4 }}>
       <Typography variant="body2">{label}</Typography>
     </Box>
   );
@@ -671,15 +671,19 @@ const AnalyticsDashboard = () => {
                 </Select>
               </FormControl>
             </Box>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={sourcesChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" name="Clicks" fill="#00C49F" />
-              </BarChart>
-            </ResponsiveContainer>
+            {sourcesChartData.length ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={sourcesChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" name="Clicks" fill="#00C49F" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              renderNoData('No sources yet')
+            )}
             <Box sx={{ width: '100%', overflowX: 'auto' }}>
               <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
                 <Box component="thead">
@@ -807,15 +811,19 @@ const AnalyticsDashboard = () => {
                   );
                 }}>Export CSV</Button>
               </Box>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={perLinkSourcesChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" name="Clicks" fill="#0088FE" />
-                </BarChart>
-              </ResponsiveContainer>
+              {perLinkSourcesChartData.length ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={perLinkSourcesChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" height={70} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" name="Clicks" fill="#0088FE" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                renderNoData('No sources yet')
+              )}
               <Box sx={{ width: '100%', overflowX: 'auto' }}>
                 <Box component="table" sx={{ width: '100%', minWidth: 520, borderCollapse: 'collapse' }}>
                   <Box component="thead">
@@ -846,28 +854,32 @@ const AnalyticsDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Link Status Distribution
             </Typography>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Active', value: summaryData?.activeLinks || 0 },
-                    { name: 'Inactive', value: summaryData?.inactiveLinks || 0 }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {((summaryData?.activeLinks || 0) + (summaryData?.inactiveLinks || 0)) > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Active', value: summaryData?.activeLinks || 0 },
+                      { name: 'Inactive', value: summaryData?.inactiveLinks || 0 }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {COLORS.map((color, index) => (
+                      <Cell key={`cell-${index}`} fill={color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              renderNoData('No link status data yet')
+            )}
           </Paper>
         </Grid>
 

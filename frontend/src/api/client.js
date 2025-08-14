@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { incrementLoading, decrementLoading } from './loadingTracker';
 
 // Build a robust API base URL:
 // - If REACT_APP_API_URL is provided, accept either root (http://host) or already '/api'
@@ -9,6 +10,7 @@ const baseUrl = apiRoot.endsWith('/api') ? apiRoot : `${apiRoot}/api`;
 const client = axios.create({ baseURL: baseUrl });
 
 client.interceptors.request.use((config) => {
+  incrementLoading();
   try {
     const stored = localStorage.getItem('auth');
     if (stored) {
@@ -23,8 +25,12 @@ client.interceptors.request.use((config) => {
 });
 
 client.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    decrementLoading();
+    return res;
+  },
   (err) => {
+    decrementLoading();
     if (err?.response?.status === 401) {
       // Redirect to login on unauthorized
       if (window.location.pathname !== '/member-login') {

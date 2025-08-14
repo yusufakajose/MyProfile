@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
+import LinearProgress from '@mui/material/LinearProgress';
+import { subscribeLoading } from './api/loadingTracker';
 import { ColorModeContext } from './theme/ColorModeContext';
 
 const getDesignTokens = (mode) => ({
@@ -65,10 +67,22 @@ const Root = () => {
       <ColorModeContext.Provider value={colorMode}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
+          <GlobalTopProgress />
           <App />
         </ThemeProvider>
       </ColorModeContext.Provider>
     </BrowserRouter>
+  );
+};
+
+const GlobalTopProgress = () => {
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() => subscribeLoading(setCount), []);
+  if (count <= 0) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 2000 }}>
+      <LinearProgress />
+    </div>
   );
 };
 

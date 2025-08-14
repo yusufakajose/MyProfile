@@ -34,6 +34,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -60,8 +61,10 @@ const Header = () => {
   const navItems = [
     { to: '/analytics', label: 'Analytics', icon: <QueryStatsIcon fontSize="small" /> },
     { to: '/links', label: 'Links', icon: <LinkIcon fontSize="small" /> },
+  ];
+  const settingsItems = [
     { to: '/settings/profile', label: 'Profile', icon: <PersonIcon fontSize="small" /> },
-    { to: '/settings/webhooks', label: 'Webhooks', icon: <WebhookIcon fontSize="small" /> }
+    { to: '/settings/webhooks', label: 'Webhooks', icon: <WebhookIcon fontSize="small" /> },
   ];
 
   return (
@@ -88,7 +91,7 @@ const Header = () => {
             LinkGrove
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center">
           {token ? (
             <>
               {isSmall ? (
@@ -159,7 +162,39 @@ const Header = () => {
                       {item.label}
                     </Link>
                   ))}
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, gap: 1 }}>
+                  {/* Desktop settings dropdown */}
+                  <Box sx={{ ml: 1 }}>
+                    <Button
+                      id="settings-menu-button"
+                      aria-controls={drawerOpen ? undefined : 'settings-menu'}
+                      aria-haspopup="true"
+                      aria-expanded={undefined}
+                      onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                      startIcon={<SettingsIcon fontSize="small" />}
+                      variant="text"
+                      size="small"
+                      sx={{ fontWeight: 700 }}
+                    >
+                      Settings
+                    </Button>
+                    <Menu
+                      id="settings-menu"
+                      anchorEl={userMenuAnchor}
+                      open={Boolean(userMenuAnchor)}
+                      onClose={closeUserMenu}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                    >
+                      {settingsItems.map((s) => (
+                        <MenuItem key={s.to} component={RouterLink} to={s.to} onClick={closeUserMenu}>
+                          <ListItemIcon sx={{ minWidth: 28 }}>{s.icon}</ListItemIcon>
+                          <ListItemText>{s.label}</ListItemText>
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </Box>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Button component={RouterLink} to="/links" variant="contained" size="small">
                       Create Link
                     </Button>
