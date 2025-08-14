@@ -45,8 +45,11 @@ const Header = () => {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const colorMode = React.useContext(ColorModeContext);
   const [userMenuAnchor, setUserMenuAnchor] = React.useState(null);
-  const openUserMenu = (e) => setUserMenuAnchor(e.currentTarget);
+  const [settingsMenuAnchor, setSettingsMenuAnchor] = React.useState(null);
+  const openUserMenu = (e) => { setUserMenuAnchor(e.currentTarget); setSettingsMenuAnchor(null); };
   const closeUserMenu = () => setUserMenuAnchor(null);
+  const openSettingsMenu = (e) => { setSettingsMenuAnchor(e.currentTarget); setUserMenuAnchor(null); };
+  const closeSettingsMenu = () => setSettingsMenuAnchor(null);
 
   const handleLogout = () => {
     logout();
@@ -166,10 +169,10 @@ const Header = () => {
                   <Box sx={{ ml: 1 }}>
                     <Button
                       id="settings-menu-button"
-                      aria-controls={drawerOpen ? undefined : 'settings-menu'}
+                      aria-controls={settingsMenuAnchor ? 'settings-menu' : undefined}
                       aria-haspopup="true"
-                      aria-expanded={undefined}
-                      onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                      aria-expanded={settingsMenuAnchor ? 'true' : undefined}
+                      onClick={openSettingsMenu}
                       startIcon={<SettingsIcon fontSize="small" />}
                       variant="text"
                       size="small"
@@ -179,14 +182,14 @@ const Header = () => {
                     </Button>
                     <Menu
                       id="settings-menu"
-                      anchorEl={userMenuAnchor}
-                      open={Boolean(userMenuAnchor)}
-                      onClose={closeUserMenu}
+                      anchorEl={settingsMenuAnchor}
+                      open={Boolean(settingsMenuAnchor)}
+                      onClose={closeSettingsMenu}
                       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                     >
                       {settingsItems.map((s) => (
-                        <MenuItem key={s.to} component={RouterLink} to={s.to} onClick={closeUserMenu}>
+                        <MenuItem key={s.to} component={RouterLink} to={s.to} onClick={closeSettingsMenu}>
                           <ListItemIcon sx={{ minWidth: 28 }}>{s.icon}</ListItemIcon>
                           <ListItemText>{s.label}</ListItemText>
                         </MenuItem>
