@@ -348,7 +348,7 @@ const AnalyticsDashboard = () => {
           </FormControl>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}>
             <Button
-              variant="outlined"
+              variant="text"
               size="small"
               sx={{ width: { xs: '100%', sm: 'auto' } }}
               onClick={() => downloadCsv(
@@ -366,7 +366,7 @@ const AnalyticsDashboard = () => {
             </Button>
             {selectedLinkId && (
               <Button
-                variant="outlined"
+                variant="text"
                 size="small"
                 sx={{ width: { xs: '100%', sm: 'auto' } }}
                 onClick={() => downloadCsv(
@@ -384,7 +384,7 @@ const AnalyticsDashboard = () => {
               </Button>
             )}
             <Button
-              variant="outlined"
+              variant="text"
               size="small"
               sx={{ width: { xs: '100%', sm: 'auto' } }}
               onClick={() => downloadCsv(
@@ -533,8 +533,8 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">Top Referrers</Typography>
-              <Button size="small" aria-label="Export referrers CSV" onClick={() => downloadCsv(
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Top Referrers</Typography>
+              <Button size="small" variant="text" aria-label="Export referrers CSV" onClick={() => downloadCsv(
                 `/analytics/export/referrers?days=${timeRange}`,
                 `analytics_referrers_${timeRange}d.csv`,
                 (referrersData?.referrers || []),
@@ -572,8 +572,8 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">Devices</Typography>
-              <Button size="small" aria-label="Export devices CSV" onClick={() => downloadCsv(
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Devices</Typography>
+              <Button size="small" variant="text" aria-label="Export devices CSV" onClick={() => downloadCsv(
                 `/analytics/export/devices?days=${timeRange}`,
                 `analytics_devices_${timeRange}d.csv`,
                 (devicesData?.devices || []),
@@ -611,8 +611,8 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12} md={hasSourcesData ? 6 : 12}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">Countries</Typography>
-              <Button size="small" aria-label="Export countries CSV" onClick={() => downloadCsv(
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Countries</Typography>
+              <Button size="small" variant="text" aria-label="Export countries CSV" onClick={() => downloadCsv(
                 `/analytics/export/countries?days=${timeRange}`,
                 `analytics_countries_${timeRange}d.csv`,
                 (countriesData?.countries || []),
@@ -651,8 +651,8 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">Sources</Typography>
-              <Button size="small" aria-label="Export sources CSV" onClick={() => downloadCsv(
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Sources</Typography>
+              <Button size="small" variant="text" aria-label="Export sources CSV" onClick={() => downloadCsv(
                 `/analytics/export/sources?days=${timeRange}`,
                 `analytics_sources_${timeRange}d.csv`,
                 (sourcesData?.sources || []),
@@ -715,8 +715,8 @@ const AnalyticsDashboard = () => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography variant="h6">Variants</Typography>
-              <Button size="small" aria-label="Export variants CSV" onClick={() => {
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Variants</Typography>
+              <Button size="small" variant="text" aria-label="Export variants CSV" onClick={() => {
                 if (!variantsData?.variants) return;
                 const csv = buildCsv(variantsData.variants, [
                   ['variantId', r => r.variantId],
@@ -755,7 +755,7 @@ const AnalyticsDashboard = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="h6">Variants for selected link</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Variants for selected link</Typography>
                 <Button size="small" aria-label="Export selected link variants CSV" onClick={() => {
                   if (!perLinkVariantsData?.variants) return;
                   downloadCsv(
@@ -800,7 +800,7 @@ const AnalyticsDashboard = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="h6">Sources for selected link</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Sources for selected link</Typography>
                 <Button size="small" aria-label="Export selected link sources CSV" onClick={() => {
                   if (!perLinkSourcesData?.sources) return;
                   downloadCsv(
