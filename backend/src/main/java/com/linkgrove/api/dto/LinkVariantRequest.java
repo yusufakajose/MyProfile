@@ -3,6 +3,7 @@ package com.linkgrove.api.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.hibernate.validator.constraints.URL;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class LinkVariantRequest {
 
     @NotBlank
     @Size(max = 500)
+    @URL(message = "URL must be a valid URL")
     @Pattern(regexp = "^https?://.+", message = "URL must start with http:// or https://")
     private String url;
 
