@@ -418,7 +418,11 @@ const LinkManager = () => {
             <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} />
             <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!form.url && !isValidHttpUrl(form.url)} helperText={!!form.url && !isValidHttpUrl(form.url) ? 'Enter a valid http(s) URL' : ' '} />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
-            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" error={!isValidAlias(form.alias || '')} helperText={!isValidAlias(form.alias || '') ? 'Use letters, numbers, - and _ (max 60)' : ' '} />
+            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias"
+              error={!isValidAlias(form.alias || '')}
+              helperText={!isValidAlias(form.alias || '') ? 'Alias: 3–50 chars, start/end with letter/number; -, _, . allowed inside' : ' '}
+              onBlur={() => { if (!isValidAlias(form.alias || '')) setToast({ open: true, message: 'Invalid alias: 3–50 chars, start/end alphanumeric; -, _, . inside only' }); }}
+            />
             <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
             <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
             <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
@@ -509,7 +513,11 @@ const LinkManager = () => {
                         <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
                         <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editForm.url && !isValidHttpUrl(editForm.url)} helperText={!!editForm.url && !isValidHttpUrl(editForm.url) ? 'Enter a valid http(s) URL' : ' '} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" error={!isValidAlias(editForm.alias || '')} helperText={!isValidAlias(editForm.alias || '') ? 'Use letters, numbers, - and _ (max 60)' : ' '} />
+                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias"
+                          error={!isValidAlias(editForm.alias || '')}
+                          helperText={!isValidAlias(editForm.alias || '') ? 'Alias: 3–50 chars, start/end with letter/number; -, _, . allowed inside' : ' '}
+                          onBlur={() => { if (!isValidAlias(editForm.alias || '')) setToast({ open: true, message: 'Invalid alias: 3–50 chars, start/end alphanumeric; -, _, . inside only' }); }}
+                        />
                         <TextField size="small" label="Tags (comma separated)" value={(editForm.tags || []).join(', ')} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="news, personal" />
                         <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} />
                         <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} />
