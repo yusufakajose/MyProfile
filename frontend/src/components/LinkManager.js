@@ -113,7 +113,18 @@ const LinkManager = () => {
       return false;
     }
   };
-  const isValidAlias = (s) => !s || /^[a-z0-9-_]{1,60}$/i.test(s);
+  const sanitizeAlias = (alias) => {
+    if (!alias) return '';
+    let a = alias.trim();
+    a = a.replace(/[._-]{2,}/g, '-');
+    a = a.replace(/^[._-]+|[._-]+$/g, '');
+    return a;
+  };
+  const isValidAlias = (s) => {
+    if (!s) return true;
+    const a = sanitizeAlias(s);
+    return /^[A-Za-z0-9](?:[A-Za-z0-9-_.]{1,48}[A-Za-z0-9])$/.test(a);
+  };
   const canCreate = useMemo(() => {
     return (
       form.title.trim() &&
@@ -149,6 +160,12 @@ const LinkManager = () => {
       // Convert local datetime (yyyy-MM-ddTHH:mm) to ISO if set
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else delete payload.startAt;
       if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else delete payload.endAt;
+      if (!payload.alias || !payload.alias.trim()) {
+        delete payload.alias;
+      } else {
+        const a = sanitizeAlias(payload.alias);
+        if (isValidAlias(a)) payload.alias = a; else delete payload.alias;
+      }
       await client.post('/links', payload);
       setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
       await load(page, query);
@@ -180,6 +197,10 @@ const LinkManager = () => {
     const payload = { ...editForm };
     if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else payload.startAt = null;
     if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else payload.endAt = null;
+    if (payload.alias && payload.alias.trim()) {
+      const a = sanitizeAlias(payload.alias);
+      payload.alias = isValidAlias(a) ? a : null;
+    }
     await client.put(`/links/${id}`, payload);
     setEditing(null);
     await load();
