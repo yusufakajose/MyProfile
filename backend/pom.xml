@@ -115,6 +115,12 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
+		<!-- OpenAPI/Swagger (springdoc) -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.6.0</version>
+		</dependency>
 		<!-- ZXing for QR code generation -->
 		<dependency>
 			<groupId>com.google.zxing</groupId>

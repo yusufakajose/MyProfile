@@ -309,11 +309,10 @@ public class LinkService {
         java.util.Set<com.linkgrove.api.model.Tag> out = new java.util.HashSet<>();
         for (String raw : names) {
             if (raw == null) continue;
-            String n = raw.trim().toLowerCase();
-            n = collapseSeparators(n);
-            if (n.isEmpty()) continue;
-            com.linkgrove.api.model.Tag tag = tagRepository.findByName(n).orElseGet(() -> {
-                com.linkgrove.api.model.Tag t = com.linkgrove.api.model.Tag.builder().name(n).build();
+            final String normalized = collapseSeparators(raw.trim().toLowerCase());
+            if (normalized.isEmpty()) continue;
+            com.linkgrove.api.model.Tag tag = tagRepository.findByName(normalized).orElseGet(() -> {
+                com.linkgrove.api.model.Tag t = com.linkgrove.api.model.Tag.builder().name(normalized).build();
                 return tagRepository.save(t);
             });
             out.add(tag);
