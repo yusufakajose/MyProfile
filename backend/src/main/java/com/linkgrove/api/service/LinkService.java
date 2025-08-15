@@ -49,9 +49,9 @@ public class LinkService {
         int nextOrder = (maxOrder != null) ? maxOrder + 1 : 1;
 
         Link link = Link.builder()
-                .title(request.getTitle())
-                .url(request.getUrl())
-                .description(request.getDescription())
+                .title(sanitizeTitle(request.getTitle()))
+                .url(sanitizeUrl(request.getUrl()))
+                .description(sanitizeDescription(request.getDescription()))
                 .user(user)
                 .displayOrder(nextOrder)
                 .isActive(true)
@@ -61,7 +61,7 @@ public class LinkService {
                 .build();
 
         if (request.getAlias() != null && !request.getAlias().isBlank()) {
-            String alias = request.getAlias().trim();
+            String alias = normalizeAlias(request.getAlias());
             linkRepository.findByAlias(alias).ifPresent(existing -> {
                 throw new RuntimeException("Alias already in use");
             });
@@ -153,9 +153,9 @@ public class LinkService {
         Link link = linkRepository.findByIdAndUser(linkId, user)
                 .orElseThrow(() -> new RuntimeException("Link not found"));
 
-        link.setTitle(request.getTitle());
-        link.setUrl(request.getUrl());
-        link.setDescription(request.getDescription());
+        link.setTitle(sanitizeTitle(request.getTitle()));
+        link.setUrl(sanitizeUrl(request.getUrl()));
+        link.setDescription(sanitizeDescription(request.getDescription()));
         link.setStartAt(request.getStartAt());
         link.setEndAt(request.getEndAt());
         if (request.getTags() != null) {
@@ -167,7 +167,7 @@ public class LinkService {
         }
 
         if (request.getAlias() != null) {
-            String trimmed = request.getAlias().trim();
+            String trimmed = normalizeAlias(request.getAlias());
             if (trimmed.isEmpty()) {
                 link.setAlias(null);
             } else if (!trimmed.equals(link.getAlias())) {
@@ -310,6 +310,7 @@ public class LinkService {
         for (String raw : names) {
             if (raw == null) continue;
             String n = raw.trim().toLowerCase();
+            n = collapseSeparators(n);
             if (n.isEmpty()) continue;
             com.linkgrove.api.model.Tag tag = tagRepository.findByName(n).orElseGet(() -> {
                 com.linkgrove.api.model.Tag t = com.linkgrove.api.model.Tag.builder().name(n).build();
@@ -322,6 +323,34 @@ public class LinkService {
 
     private java.util.List<String> normalize(java.util.List<String> names) {
         if (names == null) return java.util.List.of();
-        return names.stream().filter(java.util.Objects::nonNull).map(s -> s.trim().toLowerCase()).filter(s -> !s.isEmpty()).distinct().toList();
+        return names.stream().filter(java.util.Objects::nonNull)
+                .map(s -> collapseSeparators(s.trim().toLowerCase()))
+                .filter(s -> !s.isEmpty()).distinct().toList();
+    }
+
+    private String sanitizeTitle(String title) {
+        return title == null ? null : title.trim();
+    }
+
+    private String sanitizeUrl(String url) {
+        return url == null ? null : url.trim();
+    }
+
+    private String sanitizeDescription(String description) {
+        return description == null ? null : description.trim();
+    }
+
+    private String normalizeAlias(String alias) {
+        if (alias == null) return null;
+        String a = alias.trim();
+        // collapse duplicate separators
+        a = collapseSeparators(a);
+        // strip leading/trailing separators (.-_)
+        a = a.replaceAll("^[\\._-]+|[\\._-]+$", "");
+        return a;
+    }
+
+    private String collapseSeparators(String s) {
+        return s == null ? null : s.replaceAll("[\\._-]{2,}", "-");
     }
 }
