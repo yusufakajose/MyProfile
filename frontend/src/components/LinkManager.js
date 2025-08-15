@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl, Alert } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -52,6 +52,8 @@ const LinkManager = () => {
   const [size] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState({ open: false, message: '' });
+  const [formServerErrors, setFormServerErrors] = useState({});
+  const [editServerErrors, setEditServerErrors] = useState({});
   const [qrDialog, setQrDialog] = useState({ open: false, link: null });
   const [qrOptions, setQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, link: null });
@@ -125,6 +127,30 @@ const LinkManager = () => {
     const a = sanitizeAlias(s);
     return /^[A-Za-z0-9](?:[A-Za-z0-9-_.]{1,48}[A-Za-z0-9])$/.test(a);
   };
+  const aliasError = (s) => {
+    const raw = (s || '').trim();
+    if (!raw) return '';
+    const a = sanitizeAlias(raw);
+    if (a.length < 3 || a.length > 50) return 'Alias must be 3–50 characters';
+    if (!/^[A-Za-z0-9].*[A-Za-z0-9]$/.test(a)) return 'Alias must start/end with a letter or number';
+    if (/[^A-Za-z0-9._-]/.test(raw)) return 'Only letters, numbers, -, _, . allowed';
+    if (/^[._-]|[._-]$/.test(raw)) return 'No leading/trailing separators';
+    if (/[._-]{2,}/.test(raw)) return 'Avoid repeated separators';
+    return '';
+  };
+  const titleError = (s) => (!s || !s.trim() ? 'Title is required' : '');
+  const urlError = (s) => (s && !isValidHttpUrl(s) ? 'Enter a valid http(s) URL' : (!s ? 'URL is required' : ''));
+  const dateErrors = (startAt, endAt) => {
+    if (!startAt || !endAt) return { startAt: '', endAt: '' };
+    try {
+      const s = new Date(startAt);
+      const e = new Date(endAt);
+      if (isFinite(s.getTime()) && isFinite(e.getTime()) && s >= e) {
+        return { startAt: 'Start must be before End', endAt: 'End must be after Start' };
+      }
+    } catch {}
+    return { startAt: '', endAt: '' };
+  };
   const canCreate = useMemo(() => {
     return (
       form.title.trim() &&
@@ -157,6 +183,19 @@ const LinkManager = () => {
     setLoading(true);
     try {
       const payload = { ...form };
+      // Frontend validation
+      const errs = {
+        title: titleError(payload.title),
+        url: urlError(payload.url),
+        alias: aliasError(payload.alias),
+        ...dateErrors(payload.startAt, payload.endAt),
+      };
+      const hasErr = Object.values(errs).some(Boolean);
+      if (hasErr) {
+        setFormServerErrors(errs);
+        setToast({ open: true, message: 'Please fix highlighted fields' });
+        return;
+      }
       // Convert local datetime (yyyy-MM-ddTHH:mm) to ISO if set
       if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else delete payload.startAt;
       if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else delete payload.endAt;
@@ -166,8 +205,17 @@ const LinkManager = () => {
         const a = sanitizeAlias(payload.alias);
         if (isValidAlias(a)) payload.alias = a; else delete payload.alias;
       }
-      await client.post('/links', payload);
+      try {
+        await client.post('/links', payload);
+      } catch (e) {
+        const fe = (e?.response?.data?.fieldErrors) || {};
+        setFormServerErrors(fe);
+        const msg = Object.entries(fe).map(([k,v]) => `${k}: ${v}`).join(', ') || 'Failed to add link';
+        setToast({ open: true, message: msg });
+        return;
+      }
       setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
+      setFormServerErrors({});
       await load(page, query);
       setToast({ open: true, message: 'Link added' });
     } finally {
@@ -195,13 +243,33 @@ const LinkManager = () => {
 
   const saveEdit = async (id) => {
     const payload = { ...editForm };
+    const errs = {
+      title: titleError(payload.title),
+      url: urlError(payload.url),
+      alias: aliasError(payload.alias),
+      ...dateErrors(payload.startAt, payload.endAt),
+    };
+    if (Object.values(errs).some(Boolean)) {
+      setEditServerErrors(errs);
+      setToast({ open: true, message: 'Please fix highlighted fields' });
+      return;
+    }
     if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else payload.startAt = null;
     if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else payload.endAt = null;
     if (payload.alias && payload.alias.trim()) {
       const a = sanitizeAlias(payload.alias);
       payload.alias = isValidAlias(a) ? a : null;
     }
-    await client.put(`/links/${id}`, payload);
+    try {
+      await client.put(`/links/${id}`, payload);
+      setEditServerErrors({});
+    } catch (e) {
+      const fe = (e?.response?.data?.fieldErrors) || {};
+      setEditServerErrors(fe);
+      const msg = Object.entries(fe).map(([k,v]) => `${k}: ${v}`).join(', ') || 'Failed to save link';
+      setToast({ open: true, message: msg });
+      return;
+    }
     setEditing(null);
     await load();
     setToast({ open: true, message: 'Link saved' });
@@ -414,18 +482,19 @@ const LinkManager = () => {
       </Box>
       <Card sx={{ mb: 3 }} ref={createFormRef}>
         <CardContent>
+          {Object.values(formServerErrors).some(Boolean) && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {Object.entries(formServerErrors).map(([k,v]) => v ? `${k}: ${v}` : null).filter(Boolean).join(' • ')}
+            </Alert>
+          )}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} component="form" onSubmit={create}>
-            <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} />
-            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!form.url && !isValidHttpUrl(form.url)} helperText={!!form.url && !isValidHttpUrl(form.url) ? 'Enter a valid http(s) URL' : ' '} />
+            <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} error={!!formServerErrors.title} helperText={formServerErrors.title || ' '} />
+            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!formServerErrors.url || (!!form.url && !isValidHttpUrl(form.url))} helperText={formServerErrors.url || ((!!form.url && !isValidHttpUrl(form.url)) ? 'Enter a valid http(s) URL' : ' ')} />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
-            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias"
-              error={!isValidAlias(form.alias || '')}
-              helperText={!isValidAlias(form.alias || '') ? 'Alias: 3–50 chars, start/end with letter/number; -, _, . allowed inside' : ' '}
-              onBlur={() => { if (!isValidAlias(form.alias || '')) setToast({ open: true, message: 'Invalid alias: 3–50 chars, start/end alphanumeric; -, _, . inside only' }); }}
-            />
+            <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" error={!!formServerErrors.alias || !!aliasError(form.alias)} helperText={formServerErrors.alias || aliasError(form.alias) || ' '} />
             <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
-            <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
-            <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} />
+            <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} error={!!formServerErrors.startAt} helperText={formServerErrors.startAt || ' '} />
+            <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} error={!!formServerErrors.endAt} helperText={formServerErrors.endAt || ' '} />
             <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
@@ -510,17 +579,16 @@ const LinkManager = () => {
                       <Box sx={{ flex: 1, pr: 1 }}>
                     {editing === l.id ? (
                       <Stack spacing={1}>
-                        <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editForm.url && !isValidHttpUrl(editForm.url)} helperText={!!editForm.url && !isValidHttpUrl(editForm.url) ? 'Enter a valid http(s) URL' : ' '} />
+                        {!!Object.values(editServerErrors).some(Boolean) && (
+                          <Alert severity="error">{Object.entries(editServerErrors).map(([k,v]) => v ? `${k}: ${v}` : null).filter(Boolean).join(' • ')}</Alert>
+                        )}
+                        <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} error={!!editServerErrors.title} helperText={editServerErrors.title || ' '} />
+                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editServerErrors.url || (!!editForm.url && !isValidHttpUrl(editForm.url))} helperText={editServerErrors.url || ((!!editForm.url && !isValidHttpUrl(editForm.url)) ? 'Enter a valid http(s) URL' : ' ')} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias"
-                          error={!isValidAlias(editForm.alias || '')}
-                          helperText={!isValidAlias(editForm.alias || '') ? 'Alias: 3–50 chars, start/end with letter/number; -, _, . allowed inside' : ' '}
-                          onBlur={() => { if (!isValidAlias(editForm.alias || '')) setToast({ open: true, message: 'Invalid alias: 3–50 chars, start/end alphanumeric; -, _, . inside only' }); }}
-                        />
+                        <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" error={!!editServerErrors.alias || !!aliasError(editForm.alias)} helperText={editServerErrors.alias || aliasError(editForm.alias) || ' '} />
                         <TextField size="small" label="Tags (comma separated)" value={(editForm.tags || []).join(', ')} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="news, personal" />
-                        <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} />
-                        <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} />
+                        <TextField type="datetime-local" size="small" label="Start at" value={editForm.startAt} onChange={(e) => setEditForm({ ...editForm, startAt: e.target.value })} InputLabelProps={{ shrink: true }} error={!!editServerErrors.startAt} helperText={editServerErrors.startAt || ' '} />
+                        <TextField type="datetime-local" size="small" label="End at" value={editForm.endAt} onChange={(e) => setEditForm({ ...editForm, endAt: e.target.value })} InputLabelProps={{ shrink: true }} error={!!editServerErrors.endAt} helperText={editServerErrors.endAt || ' '} />
                       </Stack>
                     ) : (
                       <>
