@@ -147,8 +147,8 @@ const LinkManager = () => {
     try {
       const payload = { ...form };
       // Convert local datetime (yyyy-MM-ddTHH:mm) to ISO if set
-      if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString();
-      if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
+      if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else delete payload.startAt;
+      if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else delete payload.endAt;
       await client.post('/links', payload);
       setForm({ title: '', url: '', description: '', alias: '', startAt: '', endAt: '', tags: [] });
       await load(page, query);
@@ -178,8 +178,8 @@ const LinkManager = () => {
 
   const saveEdit = async (id) => {
     const payload = { ...editForm };
-    if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString();
-    if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString();
+    if (payload.startAt) payload.startAt = new Date(payload.startAt).toISOString(); else payload.startAt = null;
+    if (payload.endAt) payload.endAt = new Date(payload.endAt).toISOString(); else payload.endAt = null;
     await client.put(`/links/${id}`, payload);
     setEditing(null);
     await load();
