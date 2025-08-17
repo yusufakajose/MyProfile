@@ -12,6 +12,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import AddIcon from '@mui/icons-material/Add';
 import client from '../api/client';
+import { isValidHttpUrl, sanitizeAlias, isValidAlias, aliasError, dateErrors } from '../utils/validation';
 
 const Favicon = ({ url, size = 18 }) => {
   const host = useMemo(() => {
@@ -107,50 +108,10 @@ const LinkManager = () => {
     }
   }, []);
 
-  const isValidHttpUrl = (s) => {
-    try {
-      const u = new URL(s);
-      return u.protocol === 'http:' || u.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
-  const sanitizeAlias = (alias) => {
-    if (!alias) return '';
-    let a = alias.trim();
-    a = a.replace(/[._-]{2,}/g, '-');
-    a = a.replace(/^[._-]+|[._-]+$/g, '');
-    return a;
-  };
-  const isValidAlias = (s) => {
-    if (!s) return true;
-    const a = sanitizeAlias(s);
-    return /^[A-Za-z0-9](?:[A-Za-z0-9-_.]{1,48}[A-Za-z0-9])$/.test(a);
-  };
-  const aliasError = (s) => {
-    const raw = (s || '').trim();
-    if (!raw) return '';
-    const a = sanitizeAlias(raw);
-    if (a.length < 3 || a.length > 50) return 'Alias must be 3–50 characters';
-    if (!/^[A-Za-z0-9].*[A-Za-z0-9]$/.test(a)) return 'Alias must start/end with a letter or number';
-    if (/[^A-Za-z0-9._-]/.test(raw)) return 'Only letters, numbers, -, _, . allowed';
-    if (/^[._-]|[._-]$/.test(raw)) return 'No leading/trailing separators';
-    if (/[._-]{2,}/.test(raw)) return 'Avoid repeated separators';
-    return '';
-  };
+  // moved to utils/validation.js
   const titleError = (s) => (!s || !s.trim() ? 'Title is required' : '');
   const urlError = (s) => (s && !isValidHttpUrl(s) ? 'Enter a valid http(s) URL' : (!s ? 'URL is required' : ''));
-  const dateErrors = (startAt, endAt) => {
-    if (!startAt || !endAt) return { startAt: '', endAt: '' };
-    try {
-      const s = new Date(startAt);
-      const e = new Date(endAt);
-      if (isFinite(s.getTime()) && isFinite(e.getTime()) && s >= e) {
-        return { startAt: 'Start must be before End', endAt: 'End must be after Start' };
-      }
-    } catch {}
-    return { startAt: '', endAt: '' };
-  };
+  // moved to utils/validation.js
   const canCreate = useMemo(() => {
     return (
       form.title.trim() &&
@@ -271,19 +232,28 @@ const LinkManager = () => {
       return;
     }
     setEditing(null);
-    await load();
+    await load(page, query);
     setToast({ open: true, message: 'Link saved' });
   };
 
   const toggleActive = async (link) => {
+    const optimistic = !link.isActive;
+    setLinks((prev) => prev.map((l) => l.id === link.id ? { ...l, isActive: optimistic } : l));
     const payload = {
       title: link.title || '',
       url: link.url || '',
       description: link.description || '',
-      isActive: !link.isActive,
+      isActive: optimistic,
     };
-    await client.put(`/links/${link.id}`, payload);
-    await load();
+    try {
+      await client.put(`/links/${link.id}`, payload);
+    } catch (e) {
+      setLinks((prev) => prev.map((l) => l.id === link.id ? { ...l, isActive: !optimistic } : l));
+      const msg = e?.response?.data?.message || 'Failed to update status';
+      setToast({ open: true, message: msg });
+      return;
+    }
+    await load(page, query);
   };
 
   const move = async (index, delta) => {
@@ -576,7 +546,7 @@ const LinkManager = () => {
             <Card sx={{ cursor: 'grab' }}>
               <CardContent>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-                      <Box sx={{ flex: 1, pr: 1 }}>
+                      <Box sx={{ flex: 1, pr: 1, minWidth: 0 }}>
                     {editing === l.id ? (
                       <Stack spacing={1}>
                         {!!Object.values(editServerErrors).some(Boolean) && (
@@ -599,7 +569,7 @@ const LinkManager = () => {
                             <Typography variant="caption" color="text.secondary">{l.clickCount} clicks</Typography>
                           )}
                         </Stack>
-                        <Typography variant="body2" color="text.secondary" noWrap>{l.url}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>{l.url}</Typography>
                         {l.description ? (
                           <Typography variant="body2" color="text.secondary" noWrap>{l.description}</Typography>
                         ) : null}

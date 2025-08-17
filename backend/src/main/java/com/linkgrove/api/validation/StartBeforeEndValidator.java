@@ -13,14 +13,18 @@ public class StartBeforeEndValidator implements ConstraintValidator<StartBeforeE
     public void initialize(StartBeforeEnd annotation) {
         this.startFieldName = annotation.startField();
         this.endFieldName = annotation.endField();
+        if (this.startFieldName == null || this.startFieldName.isBlank()) this.startFieldName = "startAt";
+        if (this.endFieldName == null || this.endFieldName.isBlank()) this.endFieldName = "endAt";
     }
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
         if (value == null) return true;
         try {
-            Field startField = value.getClass().getDeclaredField(startFieldName);
-            Field endField = value.getClass().getDeclaredField(endFieldName);
+            String sName = (startFieldName == null || startFieldName.isBlank()) ? "startAt" : startFieldName;
+            String eName = (endFieldName == null || endFieldName.isBlank()) ? "endAt" : endFieldName;
+            Field startField = value.getClass().getDeclaredField(sName);
+            Field endField = value.getClass().getDeclaredField(eName);
             startField.setAccessible(true);
             endField.setAccessible(true);
             Object startObj = startField.get(value);
