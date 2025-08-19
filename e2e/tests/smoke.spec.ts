@@ -8,7 +8,8 @@ test('app loads and shows login page', async ({ page }) => {
 });
 
 test('backend health is OK', async ({ request }) => {
-  const res = await request.get('/api/auth/health');
+  const backendBase = process.env.E2E_BACKEND_URL || 'http://localhost:8080';
+  const res = await request.get(`${backendBase}/api/auth/health`);
   expect(res.ok()).toBeTruthy();
 });
 
