@@ -90,7 +90,7 @@ public class AnalyticsWorker {
                 variantAggregateRepository.upsertIncrement(event.getUsername(), event.getLinkId(), event.getVariantId(), day);
             }
 
-            // TODO: variant-level aggregation (future migration)
+            // Variant-level aggregation is handled above when a variantId is present.
 
             // Unique visitor dedup via Redis (per user+link+day+visitor key)
             String visitorId = deriveVisitorId(event);

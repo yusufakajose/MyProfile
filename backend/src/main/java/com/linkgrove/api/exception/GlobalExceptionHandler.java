@@ -31,9 +31,15 @@ public class GlobalExceptionHandler {
         
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            fieldErrors.put(fieldName, errorMessage);
+            if (error instanceof FieldError fe) {
+                String fieldName = fe.getField();
+                String errorMessage = error.getDefaultMessage();
+                fieldErrors.put(fieldName, errorMessage);
+            } else {
+                // Class-level constraint (e.g., StartBeforeEnd) -> attach under a generic key
+                String errorMessage = error.getDefaultMessage();
+                fieldErrors.put("global", errorMessage);
+            }
         });
 
         ErrorResponse errorResponse = ErrorResponse.builder()

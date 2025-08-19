@@ -9,7 +9,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class StartBeforeEndValidatorTest {
 
 	private static class DummyRequest {
+		@SuppressWarnings("unused")
 		public LocalDateTime startAt;
+		@SuppressWarnings("unused")
 		public LocalDateTime endAt;
 		DummyRequest(LocalDateTime s, LocalDateTime e) { this.startAt = s; this.endAt = e; }
 	}
