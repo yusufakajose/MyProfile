@@ -63,7 +63,7 @@ jobs:
       - name: Build
         env:
           CI: 'true'
-          REACT_APP_API_URL: /api
+          REACT_APP_API_URL: http://localhost:8080
         run: npm run build
 
       - name: Upload build
@@ -121,6 +121,7 @@ jobs:
         working-directory: e2e
         env:
           E2E_BASE_URL: http://localhost:3001
+          E2E_BACKEND_URL: http://localhost:8080
         run: npx playwright install --with-deps && npm test
 
       - name: Upload Playwright report
