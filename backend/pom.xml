@@ -192,24 +192,28 @@
 						</goals>
 					</execution>
 					<execution>
-						<id>report</id>
+						<id>jacoco-report</id>
 						<phase>verify</phase>
 						<goals>
 							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-check</id>
+						<phase>verify</phase>
+						<goals>
 							<goal>check</goal>
 						</goals>
 						<configuration>
-							<!-- Exclude boilerplate and presentation layers from coverage enforcement -->
-							<excludes>
-								<exclude>com/linkgrove/api/model/**</exclude>
-								<exclude>com/linkgrove/api/dto/**</exclude>
-								<!-- Keep controllers and exceptions covered; only exclude pure data/bootstrap code -->
-								<exclude>com/linkgrove/api/config/**</exclude>
-								<exclude>com/linkgrove/api/LinkgroveApiApplication*</exclude>
-							</excludes>
 							<rules>
 								<rule>
 									<element>BUNDLE</element>
+									<excludes>
+										<exclude>com/linkgrove/api/model/**</exclude>
+										<exclude>com/linkgrove/api/dto/**</exclude>
+										<exclude>com/linkgrove/api/config/**</exclude>
+										<exclude>com/linkgrove/api/LinkgroveApiApplication*</exclude>
+									</excludes>
 									<limits>
 										<limit>
 											<counter>INSTRUCTION</counter>
@@ -218,7 +222,6 @@
 										</limit>
 									</limits>
 								</rule>
-								<!-- Incremental stricter rule: ensure worker package keeps rising coverage -->
 								<rule>
 									<element>PACKAGE</element>
 									<includes>
