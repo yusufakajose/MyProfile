@@ -72,4 +72,77 @@ jobs:
           name: frontend-build
           path: frontend/build
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download backend jar
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build
+
+      - name: Set up Node.js 20 for E2E
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install E2E deps
+        working-directory: e2e
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Start backend
+        run: |
+          nohup java -jar backend/target/*.jar > backend.log 2>&1 & echo $! > backend.pid
+          for i in {1..60}; do
+            curl -fsS http://localhost:8080/api/auth/health && break || sleep 2;
+          done
+
+      - name: Serve frontend build
+        run: |
+          npm i -g http-server
+          nohup http-server frontend/build -p 3001 > frontend.log 2>&1 & echo $! > frontend.pid
+          for i in {1..30}; do
+            curl -fsS http://localhost:3001 && break || sleep 2;
+          done
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:3001
+        run: npx playwright install --with-deps && npm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+
+      - name: Upload backend and frontend logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-logs
+          path: |
+            backend.log
+            frontend.log
+
+      - name: Stop servers
+        if: always()
+        run: |
+          kill $(cat backend.pid) || true
+          kill $(cat frontend.pid) || true
+
 
