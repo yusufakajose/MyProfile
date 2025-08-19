@@ -25,10 +25,10 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Maven test (unit + integration)
+      - name: Maven verify (unit + integration + coverage)
         env:
           MAVEN_OPTS: -Xmx2g
-        run: ./mvnw -B -DskipITs=false test
+        run: ./mvnw -B -P it verify
 
       - name: Package (skip tests)
         run: ./mvnw -B -DskipTests package
