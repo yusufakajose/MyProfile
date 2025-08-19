@@ -77,6 +77,39 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15.8-alpine
+        env:
+          POSTGRES_USER: linkgrove
+          POSTGRES_PASSWORD: linkgrove
+          POSTGRES_DB: linkgrove
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U linkgrove -d linkgrove"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.2.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3.13.6-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,6 +136,17 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Start backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/linkgrove
+          SPRING_DATASOURCE_USERNAME: linkgrove
+          SPRING_DATASOURCE_PASSWORD: linkgrove
+          SPRING_DATA_REDIS_HOST: localhost
+          SPRING_DATA_REDIS_PORT: 6379
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          CORS_ALLOWED_ORIGINS: http://localhost:3001
+          PUBLIC_BASE_URL: http://localhost:3001
+          JWT_SECRET: linkgrove_dev_secret_key_0123456789abcdef0123456789abcdef
         run: |
           nohup java -jar backend/target/*.jar > backend.log 2>&1 & echo $! > backend.pid
           for i in {1..60}; do
