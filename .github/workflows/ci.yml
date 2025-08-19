@@ -131,6 +131,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up JDK 21 for E2E
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Install E2E deps
         working-directory: e2e
         run: npm ci --prefer-offline --no-audit
@@ -148,10 +154,20 @@ jobs:
           PUBLIC_BASE_URL: http://localhost:3001
           JWT_SECRET: linkgrove_dev_secret_key_0123456789abcdef0123456789abcdef
         run: |
-          nohup java -jar backend/target/*.jar > backend.log 2>&1 & echo $! > backend.pid
-          for i in {1..60}; do
-            curl -fsS http://localhost:8080/api/auth/health && break || sleep 2;
+          echo "Backend artifacts:" && ls -l backend/target
+          JAR=$(ls backend/target/*.jar | grep -v original | head -n1)
+          echo "Using JAR: $JAR"
+          nohup java -jar "$JAR" > backend.log 2>&1 & echo $! > backend.pid
+          ok=0
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/auth/health >/dev/null; then ok=1; break; fi
+            sleep 2
           done
+          if [ "$ok" != "1" ]; then
+            echo "Backend failed to become healthy. Showing last 400 lines of backend.log:";
+            tail -n 400 backend.log || true
+            exit 1
+          fi
 
       - name: Serve frontend build
         run: |
