@@ -214,7 +214,7 @@
 										<limit>
 											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.25</minimum>
+											<minimum>0.35</minimum>
 										</limit>
 									</limits>
 								</rule>
@@ -222,13 +222,39 @@
 								<rule>
 									<element>PACKAGE</element>
 									<includes>
-										<include>com/linkgrove/api/worker/*</include>
+										<include>com.linkgrove.api.worker</include>
 									</includes>
 									<limits>
 										<limit>
 											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.55</minimum>
+											<minimum>0.57</minimum>
+										</limit>
+									</limits>
+								</rule>
+								<rule>
+									<element>PACKAGE</element>
+									<includes>
+										<include>com.linkgrove.api.service</include>
+									</includes>
+									<limits>
+										<limit>
+											<counter>INSTRUCTION</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.29</minimum>
+										</limit>
+									</limits>
+								</rule>
+								<rule>
+									<element>PACKAGE</element>
+									<includes>
+										<include>com.linkgrove.api.controller</include>
+									</includes>
+									<limits>
+										<limit>
+											<counter>INSTRUCTION</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.21</minimum>
 										</limit>
 									</limits>
 								</rule>
