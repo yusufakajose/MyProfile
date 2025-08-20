@@ -174,9 +174,10 @@ jobs:
             exit 1
           fi
 
-      - name: Serve frontend build
+      - name: Serve frontend build (SPA)
         run: |
-          npx --yes http-server frontend/build -p 3001 > frontend.log 2>&1 & echo $! > frontend.pid
+          # Use 'serve' with single-page fallback so deep links like /register work
+          npx --yes serve -s frontend/build -l 3001 > frontend.log 2>&1 & echo $! > frontend.pid
           ok=0
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:3001 >/dev/null; then ok=1; break; fi
