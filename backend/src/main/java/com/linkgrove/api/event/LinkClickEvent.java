@@ -72,4 +72,9 @@ public class LinkClickEvent implements Serializable {
     private String utmTerm;
     private String utmContent;
     private String source; // e.g., "qr"
+
+    /**
+     * Optional request id for tracing across async processing.
+     */
+    private String requestId;
 }

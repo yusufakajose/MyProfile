@@ -120,7 +120,7 @@ public class LinkRedirectService {
             String utmContent = request.getParameter("utm_content");
             String source = request.getParameter("src");
 
-            // Create click event
+            // Create click event (include requestId for tracing if present)
             LinkClickEvent event = LinkClickEvent.builder()
                     .linkId(linkId)
                     .username(username)
@@ -137,6 +137,7 @@ public class LinkRedirectService {
                     .utmTerm(utmTerm)
                     .utmContent(utmContent)
                     .source(source)
+                    .requestId(org.slf4j.MDC.get(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID))
                     .build();
 
             // Publish to RabbitMQ asynchronously

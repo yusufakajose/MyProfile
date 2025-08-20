@@ -28,9 +28,13 @@ public class WebhookRetryWorker {
         if (due.isEmpty()) return;
         for (WebhookDelivery d : due) {
             try {
+                // Set a synthetic request id for background retries to correlate logs
+                org.slf4j.MDC.put(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID, "retry-" + d.getId());
                 webhookService.resend(d.getId());
             } catch (Exception e) {
                 log.warn("Retry failed for delivery {}: {}", d.getId(), e.toString());
+            } finally {
+                org.slf4j.MDC.remove(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID);
             }
         }
     }

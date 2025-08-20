@@ -62,6 +62,11 @@ public class AnalyticsWorker {
     })
     public void processLinkClick(LinkClickEvent event) {
         try {
+            // If event carries requestId, set it in MDC for log correlation
+            String rid = event.getRequestId();
+            if (rid != null && !rid.isBlank()) {
+                org.slf4j.MDC.put(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID, rid);
+            }
             log.info("Processing click event for link {} by user {}", 
                     event.getLinkId(), event.getUsername());
             
@@ -175,6 +180,8 @@ public class AnalyticsWorker {
             log.error("Failed to process click event for link {}: {}", 
                     event.getLinkId(), e.getMessage(), e);
             throw e; // Rethrow to trigger RabbitMQ retry mechanism
+        } finally {
+            org.slf4j.MDC.remove(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID);
         }
     }
     
