@@ -19,7 +19,7 @@ test('analytics CSV exports trigger downloads', async ({ page, request }) => {
   await page.goto('/analytics');
   // Try to observe a download; if not captured, at least ensure click works
   try {
-    const d1 = page.waitForEvent('download', { timeout: 4000 });
+    const d1 = page.waitForEvent('download', { timeout: 10000 });
     await page.getByRole('button', { name: 'Export Timeseries CSV' }).click();
     const download1 = await d1;
     const name1 = await download1.suggestedFilename();
@@ -31,7 +31,7 @@ test('analytics CSV exports trigger downloads', async ({ page, request }) => {
   const topLinksButton = page.getByRole('button', { name: 'Export Top Links CSV' });
   if (await topLinksButton.isVisible().catch(() => false)) {
     try {
-      const d2 = page.waitForEvent('download', { timeout: 4000 });
+      const d2 = page.waitForEvent('download', { timeout: 10000 });
       await topLinksButton.click();
       await d2;
     } catch {

@@ -24,25 +24,32 @@ test('links: create, edit, toggle, delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByText('Link added')).toBeVisible();
 
-  // Find the created card
-  const card = page.locator('text=My test link').first();
-  await expect(card).toBeVisible();
+  // Find the created card (stable test id on card)
+  const hostCard = page.getByTestId('link-card').filter({ hasText: 'My test link' }).first();
+  await expect(hostCard).toBeVisible();
 
-  // Enter edit mode and scope edits within the card to avoid strict mode
-  const hostCard = card.locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]');
+  // Enter edit mode and wait for inputs (use global selectors since the card text disappears)
   await hostCard.getByTestId('edit-button').click();
-  await hostCard.getByTestId('edit-title').fill('My edited link');
-  await hostCard.getByTestId('edit-url').fill('https://example.org');
-  await hostCard.getByTestId('save-button').click();
-  await expect(page.getByText('Link saved')).toBeVisible();
+  await expect(page.getByTestId('edit-title')).toBeVisible();
+  await page.getByTestId('edit-title').fill('My edited link');
+  await page.getByTestId('edit-url').fill('https://example.org');
+  // Ensure alias is empty to satisfy backend optional null vs empty rules
+  const aliasInput = page.getByLabel('Alias (optional)');
+  if (await aliasInput.isVisible().catch(() => false)) {
+    await aliasInput.fill('');
+  }
+  await expect(page.getByTestId('save-button')).toBeEnabled();
+  await page.getByTestId('save-button').click();
 
-  // Toggle active
-  await hostCard.getByTestId('active-switch').click();
+  // Re-find updated card by new title, then toggle active within it
+  const updatedCard = page.getByTestId('link-card').filter({ hasText: 'My edited link' }).first();
+  await expect(updatedCard).toBeVisible();
+  await updatedCard.getByTestId('active-switch').click();
 
   // Delete
-  await hostCard.getByTestId('delete-button').click();
-  await page.getByRole('button', { name: 'Delete' }).click();
-  await expect(page.getByText('Link deleted')).toBeVisible();
+  await updatedCard.getByTestId('delete-button').click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+  await expect(updatedCard).toHaveCount(0);
 });
 
 

@@ -220,6 +220,8 @@ const LinkManager = () => {
     if (payload.alias && payload.alias.trim()) {
       const a = sanitizeAlias(payload.alias);
       payload.alias = isValidAlias(a) ? a : null;
+    } else {
+      payload.alias = null;
     }
     try {
       await client.put(`/links/${id}`, payload);
@@ -543,7 +545,7 @@ const LinkManager = () => {
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(idx)}
           >
-            <Card sx={{ cursor: 'grab' }}>
+            <Card sx={{ cursor: 'grab' }} data-testid="link-card" data-link-id={l.id}>
               <CardContent>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
                       <Box sx={{ flex: 1, pr: 1, minWidth: 0 }}>
