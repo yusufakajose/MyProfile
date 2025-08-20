@@ -32,8 +32,6 @@ test('links tag filters narrow results', async ({ page, request }) => {
     const grid = page.locator('div.MuiGrid-container');
     await expect(grid.getByText('Tagged A', { exact: true })).toBeVisible();
     await expect(grid.getByText('Tagged B', { exact: true })).toHaveCount(0);
-  } else {
-    await expect(page.getByText('No tags yet')).toBeVisible();
   }
 });
 

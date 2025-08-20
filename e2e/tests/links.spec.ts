@@ -31,16 +31,23 @@ test('links: create, edit, toggle, delete', async ({ page, request }) => {
   // Enter edit mode and scope edits within the card to avoid strict mode
   const hostCard = card.locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]');
   await hostCard.getByLabel('edit').click();
-  await hostCard.getByLabel('Title').fill('My edited link');
-  await hostCard.getByLabel('URL').fill('https://example.org');
+  // Fill title as the first textbox within this card, and URL by placeholder
+  await hostCard.getByRole('textbox').first().fill('My edited link');
+  const urlInput = hostCard.getByPlaceholder('https://');
+  if (await urlInput.isVisible().catch(() => false)) {
+    await urlInput.fill('https://example.org');
+  } else {
+    // Fallback to any textbox containing the original URL
+    await hostCard.getByRole('textbox').nth(1).fill('https://example.org');
+  }
   await hostCard.getByLabel('save').click();
   await expect(page.getByText('Link saved')).toBeVisible();
 
   // Toggle active
-  await page.getByLabel(/Active|Inactive/).first().click();
+  await hostCard.getByLabel(/Active|Inactive/).click();
 
   // Delete
-  await page.getByLabel('delete').first().click();
+  await hostCard.getByLabel('delete').click();
   await page.getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText('Link deleted')).toBeVisible();
 });
