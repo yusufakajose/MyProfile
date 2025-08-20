@@ -458,8 +458,8 @@ const LinkManager = () => {
             </Alert>
           )}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} component="form" onSubmit={create}>
-            <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} error={!!formServerErrors.title} helperText={formServerErrors.title || ' '} />
-            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!formServerErrors.url || (!!form.url && !isValidHttpUrl(form.url))} helperText={formServerErrors.url || ((!!form.url && !isValidHttpUrl(form.url)) ? 'Enter a valid http(s) URL' : ' ')} />
+            <TextField label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required size="small" sx={{ flex: 1 }} error={!!formServerErrors.title} helperText={formServerErrors.title || ' '} inputProps={{ 'data-testid': 'create-title' }} />
+            <TextField label="URL" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required size="small" sx={{ flex: 2 }} placeholder="https://" error={!!formServerErrors.url || (!!form.url && !isValidHttpUrl(form.url))} helperText={formServerErrors.url || ((!!form.url && !isValidHttpUrl(form.url)) ? 'Enter a valid http(s) URL' : ' ')} inputProps={{ 'data-testid': 'create-url' }} />
             <TextField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} size="small" sx={{ flex: 2 }} />
             <TextField label="Alias (optional)" value={form.alias} onChange={(e) => setForm({ ...form, alias: e.target.value })} size="small" sx={{ flex: 1 }} placeholder="my-alias" error={!!formServerErrors.alias || !!aliasError(form.alias)} helperText={formServerErrors.alias || aliasError(form.alias) || ' '} />
             <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
@@ -552,8 +552,8 @@ const LinkManager = () => {
                         {!!Object.values(editServerErrors).some(Boolean) && (
                           <Alert severity="error">{Object.entries(editServerErrors).map(([k,v]) => v ? `${k}: ${v}` : null).filter(Boolean).join(' • ')}</Alert>
                         )}
-                        <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} error={!!editServerErrors.title} helperText={editServerErrors.title || ' '} />
-                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editServerErrors.url || (!!editForm.url && !isValidHttpUrl(editForm.url))} helperText={editServerErrors.url || ((!!editForm.url && !isValidHttpUrl(editForm.url)) ? 'Enter a valid http(s) URL' : ' ')} />
+                        <TextField size="small" label="Title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} error={!!editServerErrors.title} helperText={editServerErrors.title || ' '} inputProps={{ 'data-testid': 'edit-title' }} />
+                        <TextField size="small" label="URL" value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} error={!!editServerErrors.url || (!!editForm.url && !isValidHttpUrl(editForm.url))} helperText={editServerErrors.url || ((!!editForm.url && !isValidHttpUrl(editForm.url)) ? 'Enter a valid http(s) URL' : ' ')} placeholder="https://" inputProps={{ 'data-testid': 'edit-url' }} />
                         <TextField size="small" label="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                         <TextField size="small" label="Alias (optional)" value={editForm.alias} onChange={(e) => setEditForm({ ...editForm, alias: e.target.value })} placeholder="my-alias" error={!!editServerErrors.alias || !!aliasError(editForm.alias)} helperText={editServerErrors.alias || aliasError(editForm.alias) || ' '} />
                         <TextField size="small" label="Tags (comma separated)" value={(editForm.tags || []).join(', ')} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="news, personal" />
@@ -586,7 +586,7 @@ const LinkManager = () => {
                           </Typography>
                         ) : null}
                         <FormControlLabel
-                          control={<Switch checked={!!l.isActive} onChange={() => toggleActive(l)} size="small" />}
+                          control={<Switch checked={!!l.isActive} onChange={() => toggleActive(l)} size="small" inputProps={{ 'data-testid': 'active-switch' }} />}
                           label={l.isActive ? 'Active' : 'Inactive'}
                           sx={{ mt: 1 }}
                         />
@@ -597,13 +597,13 @@ const LinkManager = () => {
                     <IconButton size="small" onClick={() => move(idx, -1)} aria-label="move up" disabled={idx === 0}><ArrowUpwardIcon fontSize="inherit" /></IconButton>
                     {editing === l.id ? (
                       <>
-                        <IconButton color="primary" onClick={() => saveEdit(l.id)} aria-label="save" disabled={!(editForm.title || '').trim() || !isValidHttpUrl(editForm.url || '') || !isValidAlias(editForm.alias || '')}><SaveIcon /></IconButton>
+                        <IconButton color="primary" onClick={() => saveEdit(l.id)} aria-label="save" data-testid="save-button" disabled={!(editForm.title || '').trim() || !isValidHttpUrl(editForm.url || '') || !isValidAlias(editForm.alias || '')}><SaveIcon /></IconButton>
                         <IconButton onClick={() => { setEditing(null); }} aria-label="cancel"><CloseIcon /></IconButton>
                       </>
                     ) : (
-                      <IconButton onClick={() => beginEdit(l)} aria-label="edit"><EditIcon /></IconButton>
+                      <IconButton onClick={() => beginEdit(l)} aria-label="edit" data-testid="edit-button"><EditIcon /></IconButton>
                     )}
-                    <IconButton color="error" onClick={() => setDeleteDialog({ open: true, link: l })} aria-label="delete"><DeleteIcon /></IconButton>
+                    <IconButton color="error" onClick={() => setDeleteDialog({ open: true, link: l })} aria-label="delete" data-testid="delete-button"><DeleteIcon /></IconButton>
                     <Tooltip title="Copy short link">
                       <IconButton onClick={() => copyShort(l.id, l.alias)} aria-label="copy short link"><ContentCopyIcon fontSize="small" /></IconButton>
                     </Tooltip>
