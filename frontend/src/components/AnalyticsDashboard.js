@@ -327,6 +327,7 @@ const AnalyticsDashboard = () => {
               value={timeRange}
               label="Time Range"
               onChange={(e) => setTimeRange(e.target.value)}
+              data-testid="time-range-select"
             >
               <MenuItem value={7}>Last 7 days</MenuItem>
               <MenuItem value={14}>Last 14 days</MenuItem>
@@ -339,6 +340,7 @@ const AnalyticsDashboard = () => {
               value={selectedLinkId}
               label="Per-link"
               onChange={(e) => setSelectedLinkId(e.target.value)}
+              data-testid="per-link-select"
             >
               <MenuItem value="">All links</MenuItem>
               {(topLinksData?.topLinks || []).map((l) => (

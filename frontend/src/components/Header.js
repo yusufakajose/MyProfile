@@ -124,7 +124,7 @@ const Header = () => {
                         </ListItemButton>
                       ))}
                       <Divider sx={{ my: 1 }} />
-                      <ListItemButton component={RouterLink} to="/links" onClick={closeDrawer} sx={{ py: 1.25 }}>
+                      <ListItemButton component={RouterLink} to="/links" onClick={closeDrawer} sx={{ py: 1.25 }} data-testid="drawer-create-link">
                         <ListItemIcon sx={{ minWidth: 36 }}><AddLinkIcon fontSize="small" /></ListItemIcon>
                         <ListItemText primary="Create Link" primaryTypographyProps={{ fontWeight: 700 }} />
                       </ListItemButton>
@@ -159,7 +159,7 @@ const Header = () => {
                   ))}
                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Button component={RouterLink} to="/links" variant="contained" size="small">
+                    <Button component={RouterLink} to="/links" variant="contained" size="small" data-testid="create-link-button">
                       Create Link
                     </Button>
                     <Tooltip title={`Switch to ${theme.palette.mode === 'light' ? 'dark' : 'light'} mode`}>

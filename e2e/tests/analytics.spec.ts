@@ -20,7 +20,7 @@ test('analytics: loads and allows time range/per-link selection and CSV exports'
   await expect(page.getByRole('heading', { name: 'Analytics Overview' })).toBeVisible();
 
   // Change time range (open select via click on label or input)
-  const timeRange = page.getByLabel('Time Range');
+  const timeRange = page.getByTestId('time-range-select');
   await timeRange.click({ timeout: 10000 });
   const opt14 = page.getByRole('option', { name: 'Last 14 days' });
   if (await opt14.isVisible().catch(() => false)) {
@@ -34,7 +34,7 @@ test('analytics: loads and allows time range/per-link selection and CSV exports'
   await expect(page.getByText(/Click Trends \(.* days\)/)).toBeVisible();
 
   // Per-link select (may be empty if no links yet): just open and close
-  const perLink = page.getByLabel('Per-link');
+  const perLink = page.getByTestId('per-link-select');
   await perLink.click();
   await page.keyboard.press('Escape');
 

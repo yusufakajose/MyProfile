@@ -20,12 +20,8 @@ test('header navigation and user menu', async ({ page, request }) => {
   await expect(page.getByRole('heading', { name: 'Analytics Overview' })).toBeVisible();
 
   // Create Link button → Links page (fallback to link text on smaller variants)
-  const createBtn = page.getByRole('button', { name: 'Create Link' });
-  if (await createBtn.isVisible().catch(() => false)) {
-    await createBtn.click();
-  } else {
-    await page.getByText('Create Link').click();
-  }
+  const createBtn = page.getByTestId('create-link-button');
+  await createBtn.click();
   await expect(page).toHaveURL(/\/links/);
   await expect(page.getByText('Your Links')).toBeVisible();
 
