@@ -21,17 +21,17 @@ test('user can register then logout and login', async ({ page, request }) => {
   await page.getByRole('menuitem', { name: /logout/i }).click();
   await expect(page).toHaveURL(/.*\/member-login/);
 
-  // Login via API and restore session (more robust)
+  // Login via API and restore session
   const backendBase = process.env.E2E_BACKEND_URL || 'http://localhost:8080';
   const loginResp = await request.post(`${backendBase}/api/auth/login`, {
     data: { username, password }
   });
   expect(loginResp.ok()).toBeTruthy();
   const body = await loginResp.json();
-  await page.goto('/');
-  await page.evaluate(([t, u, e]) => {
-    localStorage.setItem('auth', JSON.stringify({ token: t, user: { username: u, email: e } }));
-  }, [body.token, body.username, body.email]);
+  // Ensure the app sees auth at initial load by injecting before navigation
+  await page.addInitScript((auth) => {
+    localStorage.setItem('auth', JSON.stringify(auth));
+  }, { token: body.token, user: { username: body.username, email: body.email } });
   await page.goto('/analytics');
   await expect(page).toHaveURL(/.*\/analytics/);
 });

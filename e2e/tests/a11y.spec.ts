@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Accessibility', () => {
-  test('main pages have no critical violations', async ({ page }) => {
+  test('main pages have no critical a11y violations', async ({ page }) => {
     await page.goto('/');
     // Login page (public)
     let results = await new AxeBuilder({ page })
