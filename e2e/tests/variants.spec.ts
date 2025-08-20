@@ -23,16 +23,16 @@ test('manage variants: add, save, delete', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByText('Link added')).toBeVisible();
 
-  // Open variants for first card
-  await page.getByRole('button', { name: /Manage Variants/i }).first().click();
-  // Add variant
-  await page.getByLabel('Title').last().fill('Variant A');
-  await page.getByLabel('URL').last().fill('https://example.com/variant-a');
-  await page.getByRole('button', { name: 'Add Variant' }).click();
-  // Save first row (variant list renders with textfields)
-  await page.getByRole('button', { name: 'Save' }).first().click();
-  // Delete variant
-  await page.getByRole('button', { name: 'Delete' }).first().click();
+  // Scope to the card containing our link title
+  const card = page.locator('div.MuiCard-root').filter({ hasText: 'Variant Host Link' }).first();
+  await card.getByRole('button', { name: /Manage Variants/i }).click();
+  // Add variant inside this card
+  await card.getByLabel('Title').last().fill('Variant A');
+  await card.getByLabel('URL').last().fill('https://example.com/variant-a');
+  await card.getByRole('button', { name: 'Add Variant' }).click();
+  // Save and then delete from within the card
+  await card.getByRole('button', { name: 'Save' }).first().click();
+  await card.getByRole('button', { name: 'Delete' }).first().click();
 });
 
 
