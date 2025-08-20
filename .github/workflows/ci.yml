@@ -165,7 +165,7 @@ jobs:
           nohup java -jar "$JAR" > backend.log 2>&1 & echo $! > backend.pid
           ok=0
           for i in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/api/auth/health >/dev/null; then ok=1; break; fi
+            if curl -fsS http://localhost:8080/api/auth/health >/dev/null 2>&1; then ok=1; break; fi
             sleep 2
           done
           if [ "$ok" != "1" ]; then
