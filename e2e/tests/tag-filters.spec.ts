@@ -28,8 +28,10 @@ test('links tag filters narrow results', async ({ page, request }) => {
   const alpha = page.getByRole('button', { name: 'alpha' });
   if (await alpha.isVisible().catch(() => false)) {
     await alpha.click();
-    await expect(page.getByText('Tagged A')).toBeVisible();
-    await expect(page.getByText('Tagged B')).toHaveCount(0);
+    // Scope visibility assertion to link cards area to avoid heading duplication
+    const grid = page.locator('div.MuiGrid-container');
+    await expect(grid.getByText('Tagged A', { exact: true })).toBeVisible();
+    await expect(grid.getByText('Tagged B', { exact: true })).toHaveCount(0);
   } else {
     await expect(page.getByText('No tags yet')).toBeVisible();
   }

@@ -28,11 +28,12 @@ test('links: create, edit, toggle, delete', async ({ page, request }) => {
   const card = page.locator('text=My test link').first();
   await expect(card).toBeVisible();
 
-  // Enter edit mode
-  await card.locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]').getByLabel('edit').click();
-  await page.getByLabel('Title').fill('My edited link');
-  await page.getByLabel('URL').fill('https://example.org');
-  await page.getByLabel('save').click();
+  // Enter edit mode and scope edits within the card to avoid strict mode
+  const hostCard = card.locator('xpath=ancestor::div[contains(@class, "MuiCard-root")]');
+  await hostCard.getByLabel('edit').click();
+  await hostCard.getByLabel('Title').fill('My edited link');
+  await hostCard.getByLabel('URL').fill('https://example.org');
+  await hostCard.getByLabel('save').click();
   await expect(page.getByText('Link saved')).toBeVisible();
 
   // Toggle active

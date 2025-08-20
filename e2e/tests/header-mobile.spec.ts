@@ -22,7 +22,8 @@ test('mobile header menu shows nav items', async ({ page, request }) => {
   await expect(page.getByRole('link', { name: 'Analytics' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Links' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Webhooks' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create Link' })).toBeVisible();
+  // Drawer includes a ListItemButton for Create Link; assert by text
+  await expect(page.getByText('Create Link')).toBeVisible();
 });
 
 
