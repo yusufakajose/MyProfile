@@ -155,7 +155,12 @@ jobs:
           JWT_SECRET: linkgrove_dev_secret_key_0123456789abcdef0123456789abcdef
         run: |
           echo "Backend artifacts:" && ls -l backend/target
-          JAR=$(ls backend/target/*.jar | grep -v original | head -n1)
+          # Prefer the Spring Boot fat jar, avoid *-plain.jar and *.original
+          JAR=$(ls backend/target/*-SNAPSHOT.jar 2>/dev/null | grep -v plain | head -n1)
+          if [ -z "$JAR" ]; then
+            JAR=$(ls backend/target/*.jar 2>/dev/null | grep -v -e original -e plain | head -n1)
+          fi
+          if [ -z "$JAR" ]; then echo "No runnable jar found in backend/target"; ls -l backend/target; exit 1; fi
           echo "Using JAR: $JAR"
           nohup java -jar "$JAR" > backend.log 2>&1 & echo $! > backend.pid
           ok=0
@@ -171,11 +176,17 @@ jobs:
 
       - name: Serve frontend build
         run: |
-          npm i -g http-server
-          nohup http-server frontend/build -p 3001 > frontend.log 2>&1 & echo $! > frontend.pid
-          for i in {1..30}; do
-            curl -fsS http://localhost:3001 && break || sleep 2;
+          npx --yes http-server frontend/build -p 3001 > frontend.log 2>&1 & echo $! > frontend.pid
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3001 >/dev/null; then ok=1; break; fi
+            sleep 2
           done
+          if [ "$ok" != "1" ]; then
+            echo "Frontend failed to start. Showing last 200 lines of frontend.log:";
+            tail -n 200 frontend.log || true
+            exit 1
+          fi
 
       - name: Run Playwright tests
         working-directory: e2e
