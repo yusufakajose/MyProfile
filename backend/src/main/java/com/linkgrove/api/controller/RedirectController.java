@@ -70,6 +70,9 @@ public class RedirectController {
         headers.add("X-RateLimit-Limit", String.valueOf(limit));
         headers.add("X-RateLimit-Window", String.valueOf(window.toSeconds()));
         headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
+        // Include current request id in response for client correlation
+        String rid = org.slf4j.MDC.get(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID);
+        if (rid != null && !rid.isBlank()) headers.add(com.linkgrove.api.config.RequestIdFilter.HEADER_REQUEST_ID, rid);
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
@@ -98,6 +101,8 @@ public class RedirectController {
         headers.add("X-RateLimit-Limit", String.valueOf(limit));
         headers.add("X-RateLimit-Window", String.valueOf(window.toSeconds()));
         headers.add("X-RateLimit-Remaining", String.valueOf(Math.max(0, rl.remaining())));
+        String rid2 = org.slf4j.MDC.get(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID);
+        if (rid2 != null && !rid2.isBlank()) headers.add(com.linkgrove.api.config.RequestIdFilter.HEADER_REQUEST_ID, rid2);
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 

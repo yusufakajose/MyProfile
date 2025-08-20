@@ -9,6 +9,7 @@ public class RateLimitService {
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     public RateLimitResult checkAndUpdate(String key, int limit, java.time.Duration window) {
+        io.micrometer.core.instrument.Metrics.counter("ratelimit.checks").increment();
         long nowMs = System.currentTimeMillis();
         String zsetKey = "rl:z:" + key;
         long windowStart = nowMs - window.toMillis();
@@ -19,6 +20,9 @@ public class RateLimitService {
         Long count = redisTemplate.opsForZSet().zCard(zsetKey);
         redisTemplate.expire(zsetKey, window.plusSeconds(10));
         boolean allowed = count != null && count <= limit;
+        if (!allowed) {
+            io.micrometer.core.instrument.Metrics.counter("ratelimit.blocked").increment();
+        }
         long remaining = Math.max(0, limit - (count == null ? 0 : count));
         // compute retryAfter based on earliest entry
         java.util.Set<String> windowMembers = redisTemplate.opsForZSet().rangeByScore(zsetKey, (double) windowStart, (double) nowMs);

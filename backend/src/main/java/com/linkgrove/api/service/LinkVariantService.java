@@ -24,6 +24,7 @@ public class LinkVariantService {
     @Transactional(readOnly = true)
     public List<LinkVariantResponse> listVariants(String username, Long linkId) {
         Link link = assertOwnership(username, linkId);
+        io.micrometer.core.instrument.Metrics.counter("variants.listed").increment();
         return linkVariantRepository.findActiveByLink(link).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -40,6 +41,7 @@ public class LinkVariantService {
                 .weight(request.getWeight() == null ? 1 : Math.max(0, request.getWeight()))
                 .isActive(request.getIsActive() == null ? true : request.getIsActive())
                 .build();
+        io.micrometer.core.instrument.Metrics.counter("variants.added").increment();
         return toResponse(linkVariantRepository.save(v));
     }
 
@@ -53,6 +55,7 @@ public class LinkVariantService {
         if (request.getDescription() != null) v.setDescription(request.getDescription());
         if (request.getWeight() != null) v.setWeight(Math.max(0, request.getWeight()));
         if (request.getIsActive() != null) v.setIsActive(request.getIsActive());
+        io.micrometer.core.instrument.Metrics.counter("variants.updated").increment();
         return toResponse(linkVariantRepository.save(v));
     }
 
@@ -62,6 +65,7 @@ public class LinkVariantService {
         LinkVariant v = linkVariantRepository.findById(variantId).orElseThrow();
         if (!v.getLink().getId().equals(link.getId())) throw new UnauthorizedException("Variant does not belong to link");
         linkVariantRepository.delete(v);
+        io.micrometer.core.instrument.Metrics.counter("variants.deleted").increment();
     }
 
     private Link assertOwnership(String username, Long linkId) {

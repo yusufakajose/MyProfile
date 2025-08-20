@@ -42,6 +42,7 @@ public class LinkService {
     @Transactional
     public LinkResponse createLink(String username, CreateLinkRequest request) {
         log.info("Creating new link for user: {}", username);
+        io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -74,6 +75,8 @@ public class LinkService {
         Link saved = linkRepository.save(link);
         // Fire-and-forget prewarm
         try { qrPrewarmService.onLinkCreatedOrUpdated(saved); } catch (Exception ignored) {}
+        io.micrometer.core.instrument.Metrics.counter("links.created").increment();
+        sample.stop(io.micrometer.core.instrument.Timer.builder("links.create.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         return mapToLinkResponse(saved);
     }
 
@@ -147,6 +150,7 @@ public class LinkService {
     @Transactional
     public LinkResponse updateLink(String username, Long linkId, UpdateLinkRequest request) {
         log.info("Updating link {} for user: {}", linkId, username);
+        io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -180,6 +184,8 @@ public class LinkService {
         }
 
         link = linkRepository.save(link);
+        io.micrometer.core.instrument.Metrics.counter("links.updated").increment();
+        sample.stop(io.micrometer.core.instrument.Timer.builder("links.update.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         return mapToLinkResponse(link);
     }
 
@@ -193,6 +199,7 @@ public class LinkService {
     @Transactional
     public void deleteLink(String username, Long linkId) {
         log.info("Deleting link {} for user: {}", linkId, username);
+        io.micrometer.core.instrument.Metrics.counter("links.deleted").increment();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -212,6 +219,7 @@ public class LinkService {
     @Transactional
     public void reorderLinks(String username, List<Long> linkIds) {
         log.info("Reordering links for user: {}", username);
+        io.micrometer.core.instrument.Metrics.counter("links.reordered").increment();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

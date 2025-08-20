@@ -34,7 +34,7 @@ public class WebhookService {
     private final WebhookDeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
     private final StringRedisTemplate stringRedisTemplate;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Value("${webhooks.maxRetriesPerDestinationPerDay:100}")
@@ -88,12 +88,16 @@ public class WebhookService {
 
         int status = 0;
         String error = null;
+        io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         try {
             var resp = restTemplate.postForEntity(cfg.getUrl(), entity, String.class);
             status = resp.getStatusCode().value();
         } catch (Exception e) {
             status = 0;
             error = e.getClass().getSimpleName() + ": " + e.getMessage();
+        } finally {
+            io.micrometer.core.instrument.Metrics.counter("webhook.emitted").increment();
+            sample.stop(io.micrometer.core.instrument.Timer.builder("webhook.emit.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         }
 
         WebhookDelivery d = WebhookDelivery.builder()
@@ -143,12 +147,16 @@ public class WebhookService {
         }
         HttpEntity<String> entity = new HttpEntity<>(json, headers);
         int status = 0; String error = null;
+        io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         try {
             var resp = restTemplate.postForEntity(cfg.getUrl(), entity, String.class);
             status = resp.getStatusCode().value();
         } catch (Exception e) {
             status = 0;
             error = e.getClass().getSimpleName() + ": " + e.getMessage();
+        } finally {
+            io.micrometer.core.instrument.Metrics.counter("webhook.retried").increment();
+            sample.stop(io.micrometer.core.instrument.Timer.builder("webhook.resend.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         }
         d.setAttempt(d.getAttempt() + 1);
         d.setStatusCode(status);

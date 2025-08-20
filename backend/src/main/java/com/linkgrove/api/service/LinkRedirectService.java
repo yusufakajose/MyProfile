@@ -44,6 +44,7 @@ public class LinkRedirectService {
     @Transactional(readOnly = true)
     public String getRedirectUrl(Long linkId) {
         log.debug("Fetching redirect URL from database for link: {}", linkId);
+        io.micrometer.core.instrument.Metrics.counter("redirect.lookup").increment();
         
         Link link = linkRepository.findById(linkId)
                 .orElseThrow(() -> new LinkNotFoundException(linkId));
@@ -99,6 +100,7 @@ public class LinkRedirectService {
      */
     public void publishClickEvent(Long linkId, HttpServletRequest request) {
         try {
+            io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
             // Extract client information for analytics
             String clientIp = getClientIpAddress(request);
             String userAgent = request.getHeader("User-Agent");
@@ -146,6 +148,7 @@ public class LinkRedirectService {
                 RabbitMQConfig.LINK_CLICK_ROUTING_KEY,
                 event
             );
+            sample.stop(io.micrometer.core.instrument.Timer.builder("redirect.publish_click.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
             
             log.debug("Published click event for link: {}", linkId);
             
