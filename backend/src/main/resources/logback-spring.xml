@@ -11,6 +11,15 @@
         <pattern>
           <pattern>{"level":"%level","thread":"%thread"}</pattern>
         </pattern>
+        <mdc>
+          <includeMdcKeyName>requestId</includeMdcKeyName>
+          <includeMdcKeyName>httpMethod</includeMdcKeyName>
+          <includeMdcKeyName>httpPath</includeMdcKeyName>
+          <includeMdcKeyName>httpQuery</includeMdcKeyName>
+          <includeMdcKeyName>httpStatus</includeMdcKeyName>
+          <includeMdcKeyName>clientIp</includeMdcKeyName>
+          <includeMdcKeyName>username</includeMdcKeyName>
+        </mdc>
         <message/>
         <arguments/>
         <stackTrace/>

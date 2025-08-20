@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.MDC;
+import com.linkgrove.api.config.RequestIdFilter;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -77,6 +79,11 @@ public class WebhookService {
         headers.add("X-Webhook-Timestamp", String.valueOf(ts));
         headers.add("X-Webhook-Nonce", nonce);
         headers.add("X-Webhook-Event", eventType);
+        // Propagate request id to downstream webhooks if present
+        String rid = MDC.get(RequestIdFilter.MDC_REQUEST_ID);
+        if (rid != null && !rid.isBlank()) {
+            headers.add(RequestIdFilter.HEADER_REQUEST_ID, rid);
+        }
         HttpEntity<String> entity = new HttpEntity<>(json, headers);
 
         int status = 0;
@@ -130,6 +137,10 @@ public class WebhookService {
         headers.add("X-Webhook-Timestamp", String.valueOf(ts));
         headers.add("X-Webhook-Nonce", nonce);
         headers.add("X-Webhook-Event", d.getEventType());
+        String rid = MDC.get(RequestIdFilter.MDC_REQUEST_ID);
+        if (rid != null && !rid.isBlank()) {
+            headers.add(RequestIdFilter.HEADER_REQUEST_ID, rid);
+        }
         HttpEntity<String> entity = new HttpEntity<>(json, headers);
         int status = 0; String error = null;
         try {
