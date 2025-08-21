@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Playwright end-to-end tests for LinkGrove",
   "scripts": {
+    "pretest": "playwright install --with-deps",
     "test": "playwright test",
     "test:report": "playwright show-report"
   },
