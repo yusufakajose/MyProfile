@@ -96,11 +96,32 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.56
+    profiles: ["obs"]
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
       - "16686:16686" # Jaeger UI
       - "4317:4317"  # OTLP gRPC
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: ["obs"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana-oss:11.1.4
+    profiles: ["obs"]
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3002:3000"
 volumes:
   postgres_data:
     driver: local
