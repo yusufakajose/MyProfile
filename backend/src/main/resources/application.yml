@@ -38,16 +38,15 @@ management:
         jdbc.connections: true
       slo:
         http.server.requests: 100ms,250ms,500ms,1s,2s,5s
+    export:
+      prometheus:
+        enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:true}
   tracing:
     sampling:
       probability: 1.0
   endpoint:
     prometheus:
       enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:true}
-  metrics:
-    export:
-      prometheus:
-        enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:true}
   otlp:
     tracing:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
