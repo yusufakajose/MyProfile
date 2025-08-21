@@ -36,11 +36,17 @@ management:
       percentiles-histogram:
         http.server.requests: true
         jdbc.connections: true
+        webhook.emit.time: true
+        webhook.resend.time: true
+        analytics.process.time: true
+        analytics.queue.lag.seconds: true
       slo:
         http.server.requests: 100ms,250ms,500ms,1s,2s,5s
     export:
       prometheus:
         enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:true}
+        exemplars:
+          enabled: true
   tracing:
     sampling:
       probability: 1.0

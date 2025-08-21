@@ -1,0 +1,53 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP server p95 latency",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"linkgrove-api\"}[5m])) by (le))", "legendFormat": "p95"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "options": {"legend": {"showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP 5xx rate",
+      "targets": [
+        {"expr": "sum(rate(http_server_requests_seconds_count{application=\"linkgrove-api\",status=~\"5..\"}[5m]))", "legendFormat": "5xx rps"}
+      ],
+      "options": {"legend": {"showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Webhook success vs failure",
+      "targets": [
+        {"expr": "sum(rate(webhook_success_total[5m]))", "legendFormat": "success"},
+        {"expr": "sum(rate(webhook_failure_total[5m]))", "legendFormat": "failure"}
+      ],
+      "options": {"legend": {"showLegend": true}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Analytics queue lag (p95 seconds)",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(analytics_queue_lag_seconds_bucket[5m])) by (le))", "legendFormat": "lag p95"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "options": {"legend": {"showLegend": true}}
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["linkgrove", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "LinkGrove Overview",
+  "version": 1
+}
+

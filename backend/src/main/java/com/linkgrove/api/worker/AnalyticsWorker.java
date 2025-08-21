@@ -61,7 +61,17 @@ public class AnalyticsWorker {
         @CacheEvict(value = "analytics-variants-by-link-v1", allEntries = true)
     })
     public void processLinkClick(LinkClickEvent event) {
+        io.micrometer.core.instrument.Timer.Sample processingSample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         try {
+            // Queue lag exemplar: seconds between enqueue and now when available
+            if (event.getClickedAt() != null) {
+                long lagSec = java.time.Duration.between(event.getClickedAt(), java.time.Instant.now()).getSeconds();
+                io.micrometer.core.instrument.Metrics.counter("analytics.queue.lag.events").increment();
+                io.micrometer.core.instrument.DistributionSummary
+                    .builder("analytics.queue.lag.seconds")
+                    .register(io.micrometer.core.instrument.Metrics.globalRegistry)
+                    .record(Math.max(0, lagSec));
+            }
             // If event carries requestId, set it in MDC for log correlation
             String rid = event.getRequestId();
             if (rid != null && !rid.isBlank()) {
@@ -181,6 +191,15 @@ public class AnalyticsWorker {
                     event.getLinkId(), e.getMessage(), e);
             throw e; // Rethrow to trigger RabbitMQ retry mechanism
         } finally {
+            // Stop processing timer
+            try {
+                processingSample.stop(
+                    io.micrometer.core.instrument.Timer
+                        .builder("analytics.process.time")
+                        .publishPercentileHistogram()
+                        .register(io.micrometer.core.instrument.Metrics.globalRegistry)
+                );
+            } catch (Exception ignore) {}
             org.slf4j.MDC.remove(com.linkgrove.api.config.RequestIdFilter.MDC_REQUEST_ID);
         }
     }

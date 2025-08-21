@@ -1,0 +1,39 @@
+groups:
+  - name: linkgrove.rules
+    rules:
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application="linkgrove-api"}[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 latency"
+          description: "p95 > 500ms for 5m"
+
+      - alert: High5xxRate
+        expr: sum(rate(http_server_requests_seconds_count{application="linkgrove-api",status=~"5.."}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated 5xx rate"
+          description: ">0.1 rps of 5xx for 5m"
+
+      - alert: WebhookFailures
+        expr: rate(webhook_failure_total[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Webhook failures detected"
+          description: "Non-zero webhook failures over 10m"
+
+      - alert: QueueLagHigh
+        expr: histogram_quantile(0.95, sum(rate(analytics_queue_lag_seconds_bucket[5m])) by (le)) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Analytics queue lag high"
+          description: "p95 processing lag > 10s"
+

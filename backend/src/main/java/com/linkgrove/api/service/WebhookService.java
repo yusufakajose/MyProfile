@@ -96,6 +96,11 @@ public class WebhookService {
             status = 0;
             error = e.getClass().getSimpleName() + ": " + e.getMessage();
         } finally {
+            if (status >= 200 && status < 300) {
+                io.micrometer.core.instrument.Metrics.counter("webhook.success").increment();
+            } else {
+                io.micrometer.core.instrument.Metrics.counter("webhook.failure").increment();
+            }
             io.micrometer.core.instrument.Metrics.counter("webhook.emitted").increment();
             sample.stop(io.micrometer.core.instrument.Timer.builder("webhook.emit.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         }
@@ -155,6 +160,11 @@ public class WebhookService {
             status = 0;
             error = e.getClass().getSimpleName() + ": " + e.getMessage();
         } finally {
+            if (status >= 200 && status < 300) {
+                io.micrometer.core.instrument.Metrics.counter("webhook.success").increment();
+            } else {
+                io.micrometer.core.instrument.Metrics.counter("webhook.failure").increment();
+            }
             io.micrometer.core.instrument.Metrics.counter("webhook.retried").increment();
             sample.stop(io.micrometer.core.instrument.Timer.builder("webhook.resend.time").register(io.micrometer.core.instrument.Metrics.globalRegistry));
         }
