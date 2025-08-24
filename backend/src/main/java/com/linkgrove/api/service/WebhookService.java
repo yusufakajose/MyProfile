@@ -14,7 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+
 import org.slf4j.MDC;
 import com.linkgrove.api.config.RequestIdFilter;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,7 +34,7 @@ public class WebhookService {
     private final WebhookDeliveryRepository deliveryRepository;
     private final UserRepository userRepository;
     private final StringRedisTemplate stringRedisTemplate;
-    private final RestTemplate restTemplate;
+    private final WebhookHttpClient webhookHttpClient;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Value("${webhooks.maxRetriesPerDestinationPerDay:100}")
@@ -84,13 +84,16 @@ public class WebhookService {
         if (rid != null && !rid.isBlank()) {
             headers.add(RequestIdFilter.HEADER_REQUEST_ID, rid);
         }
+        // Idempotency key for this logical delivery (same on retries)
+        String idem = generateIdempotencyKey(username, eventType, linkId, json);
+        headers.add("X-Idempotency-Key", idem);
         HttpEntity<String> entity = new HttpEntity<>(json, headers);
 
         int status = 0;
         String error = null;
         io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         try {
-            var resp = restTemplate.postForEntity(cfg.getUrl(), entity, String.class);
+            var resp = webhookHttpClient.postAsync(cfg.getUrl(), entity).get();
             status = resp.getStatusCode().value();
         } catch (Exception e) {
             status = 0;
@@ -116,6 +119,7 @@ public class WebhookService {
                 .payload(json)
                 .deadLettered(false)
                 .nextAttemptAt(computeNextAttemptAt(status, 1))
+                .idempotencyKey(idem)
                 .build();
         // If scheduling a retry, enforce per-destination/day cap
         if (d.getNextAttemptAt() != null) {
@@ -150,11 +154,15 @@ public class WebhookService {
         if (rid != null && !rid.isBlank()) {
             headers.add(RequestIdFilter.HEADER_REQUEST_ID, rid);
         }
+        // Reuse idempotency key from original delivery if present
+        if (d.getIdempotencyKey() != null && !d.getIdempotencyKey().isBlank()) {
+            headers.add("X-Idempotency-Key", d.getIdempotencyKey());
+        }
         HttpEntity<String> entity = new HttpEntity<>(json, headers);
         int status = 0; String error = null;
         io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         try {
-            var resp = restTemplate.postForEntity(cfg.getUrl(), entity, String.class);
+            var resp = webhookHttpClient.postAsync(cfg.getUrl(), entity).get();
             status = resp.getStatusCode().value();
         } catch (Exception e) {
             status = 0;
@@ -205,6 +213,19 @@ public class WebhookService {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private String generateIdempotencyKey(String username, String eventType, Long linkId, String payload) {
+        try {
+            String base = username + ":" + eventType + ":" + (linkId == null ? "" : linkId) + ":" + payload;
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(base.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < digest.length; i++) sb.append(String.format("%02x", digest[i]));
+            return sb.substring(0, 64);
+        } catch (Exception e) {
+            return generateNonce(16);
+        }
     }
 
     private LocalDateTime computeNextAttemptAt(int statusCode, int attempt) {

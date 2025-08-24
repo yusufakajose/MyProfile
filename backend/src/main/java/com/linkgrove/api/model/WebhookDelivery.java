@@ -51,6 +51,9 @@ public class WebhookDelivery {
 
     @Column(name = "dead_lettered", nullable = false)
     private Boolean deadLettered;
+
+    @Column(name = "idempotency_key", length = 128)
+    private String idempotencyKey;
 }
 
 

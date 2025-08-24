@@ -53,6 +53,29 @@ management:
         enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:true}
         exemplars:
           enabled: true
+resilience4j:
+  circuitbreaker:
+    instances:
+      webhook:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      webhook:
+        max-attempts: 3
+        wait-duration: 300ms
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+  timelimiter:
+    instances:
+      webhook:
+        timeout-duration: 3s
   tracing:
     sampling:
       probability: 1.0
