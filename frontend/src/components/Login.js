@@ -21,10 +21,12 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await client.post('/auth/login', { username, password });
-      login(res.data.token, { username: res.data.username, email: res.data.email });
+      login(res.data.token, { username: res.data.username, email: res.data.email }, res.data.refreshToken);
       navigate('/analytics');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Login failed');
+      // Surface lockout message or backend error
+      const msg = err?.response?.data?.message || err?.response?.data?.error || 'Login failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
