@@ -1,6 +1,7 @@
 package com.linkgrove.api.controller;
 
 import com.linkgrove.api.dto.AuthResponse;
+import com.linkgrove.api.dto.RefreshRequest;
 import com.linkgrove.api.dto.LoginRequest;
 import com.linkgrove.api.dto.RegisterRequest;
 import com.linkgrove.api.service.AuthService;
@@ -27,6 +28,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
     }
 
     @GetMapping("/health")

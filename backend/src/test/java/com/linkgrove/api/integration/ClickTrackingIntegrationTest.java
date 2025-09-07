@@ -51,7 +51,7 @@ class ClickTrackingIntegrationTest {
         RegisterRequest registerRequest = new RegisterRequest();
         registerRequest.setUsername(username);
         registerRequest.setEmail(username + "@example.com");
-        registerRequest.setPassword("password123");
+        registerRequest.setPassword(TestPasswordUtil.strong());
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -61,7 +61,7 @@ class ClickTrackingIntegrationTest {
         // Login to get auth token
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername(username);
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword(TestPasswordUtil.strong());
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)

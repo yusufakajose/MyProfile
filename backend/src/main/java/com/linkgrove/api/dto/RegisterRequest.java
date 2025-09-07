@@ -3,6 +3,7 @@ package com.linkgrove.api.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.linkgrove.api.validation.StrongPassword;
 import lombok.Data;
 
 @Data
@@ -17,6 +18,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    @StrongPassword
     private String password;
 }

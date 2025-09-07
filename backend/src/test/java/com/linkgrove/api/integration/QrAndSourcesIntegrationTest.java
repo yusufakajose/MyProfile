@@ -47,7 +47,7 @@ class QrAndSourcesIntegrationTest {
         RegisterRequest registerRequest = new RegisterRequest();
         registerRequest.setUsername(username);
         registerRequest.setEmail(username + "@example.com");
-        registerRequest.setPassword("password");
+        registerRequest.setPassword(TestPasswordUtil.strong());
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -56,7 +56,7 @@ class QrAndSourcesIntegrationTest {
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername(username);
-        loginRequest.setPassword("password");
+        loginRequest.setPassword(TestPasswordUtil.strong());
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
