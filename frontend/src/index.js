@@ -28,12 +28,68 @@ const getDesignTokens = (mode) => ({
     MuiCssBaseline: {
       styleOverrides: {
         html: { scrollBehavior: 'smooth' },
+        '.skip-link': {
+          position: 'absolute',
+          left: '-9999px',
+          top: 'auto',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        },
+        '.skip-link:focus, .skip-link:focus-visible': {
+          position: 'fixed',
+          left: 8,
+          top: 8,
+          width: 'auto',
+          height: 'auto',
+          overflow: 'visible',
+          zIndex: 4000,
+          padding: '8px 12px',
+          borderRadius: 8,
+          backgroundColor: mode === 'light' ? '#ffffff' : '#121a2a',
+          color: mode === 'light' ? '#0f172a' : '#e6e8ee',
+          boxShadow: '0 0 0 3px rgba(37,99,235,0.45)',
+          textDecoration: 'none',
+          border: '1px solid',
+          borderColor: mode === 'light' ? '#cbd5e1' : '#334155',
+        },
       },
     },
     MuiButton: {
       defaultProps: { size: 'large' },
       styleOverrides: {
-        root: { borderRadius: 16, textTransform: 'none', paddingTop: 12, paddingBottom: 12 },
+        root: {
+          borderRadius: 16,
+          textTransform: 'none',
+          paddingTop: 12,
+          paddingBottom: 12,
+          '&.Mui-focusVisible': { boxShadow: '0 0 0 3px rgba(37,99,235,0.45)' },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': { boxShadow: '0 0 0 3px rgba(37,99,235,0.45)' },
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focusVisible': {
+            outline: '2px solid rgba(37,99,235,0.75)',
+            outlineOffset: 2,
+            backgroundColor: 'rgba(37,99,235,0.08)',
+          },
+        },
+      },
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          '&:focus-visible': { outline: '2px solid rgba(37,99,235,0.75)', outlineOffset: 2 },
+        },
       },
     },
     MuiCard: {

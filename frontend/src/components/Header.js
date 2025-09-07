@@ -82,6 +82,7 @@ const Header = () => {
             component={RouterLink}
             to="/"
             sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 800, letterSpacing: 0.3 }}
+            aria-label="Go to dashboard"
           >
             LinkGrove
           </Typography>
@@ -101,7 +102,7 @@ const Header = () => {
                       <MenuIcon />
                     </IconButton>
                   </Tooltip>
-                  <Drawer anchor="right" open={drawerOpen} onClose={closeDrawer} PaperProps={{ sx: { width: '86vw', maxWidth: 360 } }}>
+                  <Drawer anchor="right" open={drawerOpen} onClose={closeDrawer} PaperProps={{ sx: { width: '86vw', maxWidth: 360 } }} aria-label="Navigation menu">
                     <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
                         {(user?.username || 'U').slice(0, 1).toUpperCase()}
@@ -172,7 +173,7 @@ const Header = () => {
                         {(user?.username || 'U').slice(0, 1).toUpperCase()}
                       </Avatar>
                     </IconButton>
-                    <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={closeUserMenu} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                    <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={closeUserMenu} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }} MenuListProps={{ 'aria-label': 'user menu' }}>
                       <MenuItem component={RouterLink} to="/settings/profile" onClick={closeUserMenu}>Profile</MenuItem>
                       <MenuItem onClick={() => { closeUserMenu(); handleLogout(); }}>
                         <ListItemIcon sx={{ minWidth: 28 }}><LogoutIcon fontSize="small" /></ListItemIcon>
@@ -192,7 +193,7 @@ const Header = () => {
                       <MenuIcon />
                     </IconButton>
                   </Tooltip>
-                  <Drawer anchor="right" open={drawerOpen} onClose={closeDrawer} PaperProps={{ sx: { width: '86vw', maxWidth: 360 } }}>
+                  <Drawer anchor="right" open={drawerOpen} onClose={closeDrawer} PaperProps={{ sx: { width: '86vw', maxWidth: 360 } }} aria-label="Navigation menu">
                     <Box sx={{ p: 2 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Menu</Typography>
                     </Box>
@@ -211,8 +212,8 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <Button component={RouterLink} to="/member-login" variant="outlined" size="small">Login</Button>
-                  <Button component={RouterLink} to="/register" variant="contained" size="small">Register</Button>
+                  <Button component={RouterLink} to="/member-login" variant="outlined" size="small" aria-label="Login">Login</Button>
+                  <Button component={RouterLink} to="/register" variant="contained" size="small" aria-label="Register">Register</Button>
                   <Tooltip title={`Switch to ${theme.palette.mode === 'light' ? 'dark' : 'light'} mode`}>
                     <IconButton onClick={colorMode.toggleColorMode} sx={{ ml: 1 }} aria-label="toggle color mode">
                       {theme.palette.mode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
