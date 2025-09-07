@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 
 const AuthContext = createContext({ user: null, token: null, refreshToken: null, ready: true, login: () => {}, logout: () => {}, setTokens: () => {} });
 
@@ -33,24 +33,24 @@ export const AuthProvider = ({ children }) => {
   const [ready, setReady] = useState(false);
 
   // Expose a unified setter so interceptors can update tokens
-  const setTokens = (nextToken, nextRefreshToken, nextUser) => {
+  const setTokens = useCallback((nextToken, nextRefreshToken, nextUser) => {
     const newUser = nextUser !== undefined ? nextUser : user;
     setUser(newUser || null);
     setToken(nextToken || null);
     setRefreshToken(nextRefreshToken || null);
     localStorage.setItem('auth', JSON.stringify({ token: nextToken || null, refreshToken: nextRefreshToken || null, user: newUser || null }));
-  };
+  }, [user]);
 
-  const login = (nextToken, nextUser, nextRefreshToken) => {
+  const login = useCallback((nextToken, nextUser, nextRefreshToken) => {
     setTokens(nextToken, nextRefreshToken, nextUser);
-  };
+  }, [setTokens]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     setRefreshToken(null);
     localStorage.removeItem('auth');
-  };
+  }, []);
 
   // Silent refresh shortly before token expiry, or if no access token but refresh exists
   useEffect(() => {
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const value = useMemo(() => ({ user, token, refreshToken, ready, login, logout, setTokens }), [user, token, refreshToken, ready]);
+  const value = useMemo(() => ({ user, token, refreshToken, ready, login, logout, setTokens }), [user, token, refreshToken, ready, login, logout, setTokens]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
