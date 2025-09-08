@@ -27,6 +27,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final LockoutService lockoutService;
     private final JwtUtil jwtUtil;
+    private final SecurityUxService securityUxService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional
@@ -59,6 +60,9 @@ public class AuthService {
 
         user.getRoles().add(userRole);
         user = userRepository.save(user);
+
+        // Send email verification link
+        securityUxService.initiateEmailVerification(user);
 
         String token = jwtUtil.generateToken(user.getUsername());
         String refresh = generateAndStoreRefreshToken(user);
@@ -96,10 +100,11 @@ public class AuthService {
         User user = found.getUser();
         // rotate: revoke current and issue new
         found.setRevoked(true);
+        found.setLastUsedAt(java.time.LocalDateTime.now());
+        refreshTokenRepository.save(found);
         String newRaw = generateSecureToken();
         String newHash = sha256(newRaw);
         found.setReplacedBy(newHash);
-        refreshTokenRepository.save(found);
 
         RefreshToken rt = RefreshToken.builder()
                 .user(user)
@@ -107,6 +112,9 @@ public class AuthService {
                 .createdAt(java.time.LocalDateTime.now())
                 .expiresAt(java.time.LocalDateTime.now().plusDays(30))
                 .revoked(false)
+                .ip(getCurrentRequestIp())
+                .userAgent(getCurrentRequestUserAgent())
+                .lastUsedAt(java.time.LocalDateTime.now())
                 .build()
                 ;
         refreshTokenRepository.save(rt);
@@ -124,6 +132,9 @@ public class AuthService {
                 .createdAt(java.time.LocalDateTime.now())
                 .expiresAt(java.time.LocalDateTime.now().plusDays(30))
                 .revoked(false)
+                .ip(getCurrentRequestIp())
+                .userAgent(getCurrentRequestUserAgent())
+                .lastUsedAt(java.time.LocalDateTime.now())
                 .build();
         refreshTokenRepository.save(rt);
         // cleanup old expired tokens opportunistically
@@ -149,5 +160,29 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("hash error");
         }
+    }
+
+    private String getCurrentRequestIp() {
+        try {
+            jakarta.servlet.http.HttpServletRequest req = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes() instanceof org.springframework.web.context.request.ServletRequestAttributes sra ? sra.getRequest() : null;
+            if (req == null) return null;
+            String xff = req.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isBlank()) {
+                int comma = xff.indexOf(',');
+                return comma > 0 ? xff.substring(0, comma).trim() : xff.trim();
+            }
+            String real = req.getHeader("X-Real-IP");
+            if (real != null && !real.isBlank()) return real.trim();
+            return req.getRemoteAddr();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String getCurrentRequestUserAgent() {
+        try {
+            jakarta.servlet.http.HttpServletRequest req = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes() instanceof org.springframework.web.context.request.ServletRequestAttributes sra ? sra.getRequest() : null;
+            return req != null ? req.getHeader("User-Agent") : null;
+        } catch (Exception e) { return null; }
     }
 }

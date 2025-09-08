@@ -8,6 +8,7 @@ import lombok.Data;
 public class ProfileResponse {
     private String username;
     private String email;
+    private Boolean emailVerified;
     private String displayName;
     private String bio;
     private String profileImageUrl;

@@ -56,6 +56,9 @@ const Login = () => {
           <Typography variant="body2" sx={{ mt: 2 }}>
             No account? <MuiLink component={Link} to="/register">Register</MuiLink>
           </Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Forgot password? <MuiLink component={Link} to="/forgot-password">Reset it</MuiLink>
+          </Typography>
         </CardContent>
       </Card>
     </Box>

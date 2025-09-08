@@ -21,9 +21,26 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private Long expiration;
 
+    @Value("${jwt.previous-secrets:}")
+    private String previousSecretsCsv;
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = secret.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private SecretKey[] getVerificationKeys() {
+        java.util.List<SecretKey> keys = new java.util.ArrayList<>();
+        keys.add(getSigningKey());
+        if (previousSecretsCsv != null && !previousSecretsCsv.isBlank()) {
+            for (String s : previousSecretsCsv.split(",")) {
+                String trimmed = s.trim();
+                if (!trimmed.isEmpty()) {
+                    keys.add(Keys.hmacShaKeyFor(trimmed.getBytes()));
+                }
+            }
+        }
+        return keys.toArray(new SecretKey[0]);
     }
 
     public String extractUsername(String token) {
@@ -40,11 +57,18 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        // Try current key, then fall back to previous secrets for rotation window
+        for (SecretKey key : getVerificationKeys()) {
+            try {
+                return Jwts.parser()
+                        .verifyWith(key)
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+            } catch (Exception ignored) {
+            }
+        }
+        throw new io.jsonwebtoken.security.SignatureException("JWT signature verification failed");
     }
 
     private Boolean isTokenExpired(String token) {

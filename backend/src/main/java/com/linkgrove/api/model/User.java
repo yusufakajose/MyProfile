@@ -62,5 +62,12 @@ public class User {
     @OrderBy("displayOrder ASC")
     @Builder.Default
     private List<Link> links = new ArrayList<>();
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(name = "verified_at")
+    private java.time.LocalDateTime verifiedAt;
 }
 

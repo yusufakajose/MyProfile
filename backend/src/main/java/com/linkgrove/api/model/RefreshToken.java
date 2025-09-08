@@ -38,6 +38,15 @@ public class RefreshToken {
 
     @Column(name = "replaced_by", length = 128)
     private String replacedBy;
+
+    @Column(name = "ip", length = 64)
+    private String ip;
+
+    @Column(name = "user_agent", length = 255)
+    private String userAgent;
+
+    @Column(name = "last_used_at")
+    private LocalDateTime lastUsedAt;
 }
 
 

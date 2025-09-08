@@ -11,6 +11,10 @@ import Register from './components/Register';
 import LinkManager from './components/LinkManager';
 import ProfileSettings from './components/ProfileSettings';
 import WebhookSettings from './components/WebhookSettings';
+import SessionSettings from './components/SessionSettings';
+import VerifyEmailPage from './components/VerifyEmailPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -23,6 +27,10 @@ function App() {
     else if (path.startsWith('/links')) title = 'Links · LinkGrove';
     else if (path.startsWith('/settings/profile')) title = 'Profile Settings · LinkGrove';
     else if (path.startsWith('/settings/webhooks')) title = 'Webhook Settings · LinkGrove';
+    else if (path.startsWith('/settings/sessions')) title = 'Sessions · LinkGrove';
+    else if (path.startsWith('/verify-email')) title = 'Verify Email · LinkGrove';
+    else if (path.startsWith('/forgot-password')) title = 'Forgot Password · LinkGrove';
+    else if (path.startsWith('/reset-password')) title = 'Reset Password · LinkGrove';
     else if (path.startsWith('/member-login')) title = 'Login · LinkGrove';
     else if (path.startsWith('/register')) title = 'Register · LinkGrove';
     else if (path.startsWith('/u/')) title = 'Profile · LinkGrove';
@@ -80,8 +88,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/settings/sessions"
+              element={
+                <ProtectedRoute>
+                  <SessionSettings />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/member-login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
           </Container>

@@ -23,6 +23,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import { Link as LinkIcon } from '@mui/icons-material';
 import WebhookIcon from '@mui/icons-material/Webhook';
+import SecurityIcon from '@mui/icons-material/Security';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -60,6 +61,7 @@ const Header = () => {
     { to: '/analytics', label: 'Analytics', icon: <QueryStatsIcon fontSize="small" /> },
     { to: '/links', label: 'Links', icon: <LinkIcon fontSize="small" /> },
     { to: '/settings/webhooks', label: 'Webhooks', icon: <WebhookIcon fontSize="small" /> },
+    { to: '/settings/sessions', label: 'Sessions', icon: <SecurityIcon fontSize="small" /> },
   ];
 
   return (

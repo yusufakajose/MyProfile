@@ -11,6 +11,7 @@ const ProfileSettings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [username, setUsername] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
   const { login, user: authUser } = useAuth();
   const [themePrimaryColor, setThemePrimaryColor] = useState('');
   const [themeAccentColor, setThemeAccentColor] = useState('');
@@ -27,6 +28,7 @@ const ProfileSettings = () => {
         setBio(res.data.bio || '');
         setProfileImageUrl(res.data.profileImageUrl || '');
         setUsername(res.data.username || authUser?.username || '');
+        setEmailVerified(Boolean(res.data.emailVerified));
         setThemePrimaryColor(res.data.themePrimaryColor || '');
         setThemeAccentColor(res.data.themeAccentColor || '');
         setThemeBackgroundColor(res.data.themeBackgroundColor || '');
@@ -87,12 +89,28 @@ const ProfileSettings = () => {
       <Card>
         <CardContent>
           <Stack component="form" spacing={2} onSubmit={save}>
+            <Alert severity={emailVerified ? 'success' : 'warning'}>
+              {emailVerified ? 'Email verified' : 'Email not verified yet. Check your inbox or request a new verification email.'}
+            </Alert>
             <TextField
               label="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               helperText="Public profile url: /u/username"
             />
+            {!emailVerified && (
+              <Box>
+                <Button variant="outlined" onClick={async () => {
+                  setError(''); setSuccess('');
+                  try {
+                    await client.post('/auth/initiate-email-verification', null, { params: { username } });
+                    setSuccess('Verification email sent');
+                  } catch (e) {
+                    setError('Failed to send verification email');
+                  }
+                }}>Send Verification Email</Button>
+              </Box>
+            )}
             <Box>
               <Button variant="outlined" onClick={saveUsername} disabled={loading || !username || username === authUser?.username}>Update Username</Button>
             </Box>

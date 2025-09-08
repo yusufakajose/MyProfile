@@ -22,7 +22,7 @@ const Register = () => {
     setLoading(true);
     try {
       const res = await client.post('/auth/register', { username, email, password });
-      login(res.data.token, { username: res.data.username, email: res.data.email });
+      login(res.data.token, { username: res.data.username, email: res.data.email }, res.data.refreshToken);
       navigate('/analytics');
     } catch (err) {
       setError(err?.response?.data?.message || 'Registration failed');
