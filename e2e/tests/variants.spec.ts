@@ -18,13 +18,14 @@ test('manage variants: add, save, delete', async ({ page, request }) => {
   await seedAuth(page, request);
   await page.goto('/links');
   // Create a base link
-  await page.getByLabel('Title').fill('Variant Host Link');
-  await page.getByLabel('URL').fill('https://example.com/base');
+  await page.getByTestId('create-title').fill('Variant Host Link');
+  await page.getByTestId('create-url').fill('https://example.com/base');
   await page.getByRole('button', { name: 'Add' }).click();
   await expect(page.getByText('Link added')).toBeVisible();
 
-  // Scope to the card containing our link title
-  const card = page.locator('div.MuiCard-root').filter({ hasText: 'Variant Host Link' }).first();
+  // Scope to the card containing our link title (stable test id on card)
+  const card = page.getByTestId('link-card').filter({ hasText: 'Variant Host Link' }).first();
+  await expect(card).toBeVisible();
   await card.getByRole('button', { name: /Manage Variants/i }).click();
   // Add variant inside this card
   await card.getByLabel('Title').last().fill('Variant A');
