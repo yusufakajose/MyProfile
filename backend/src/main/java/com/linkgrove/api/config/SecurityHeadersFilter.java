@@ -17,6 +17,11 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         // Content Security Policy - allow self, inline styles for MUI, images data: for QR
         String csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'";
         response.setHeader("Content-Security-Policy", csp);
+        // HSTS (only if behind HTTPS)
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if ("https".equalsIgnoreCase(proto) || request.isSecure()) {
+            response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+        }
         response.setHeader("X-Content-Type-Options", "nosniff");
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Referrer-Policy", "no-referrer-when-downgrade");

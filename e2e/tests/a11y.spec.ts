@@ -17,6 +17,21 @@ test.describe('Accessibility', () => {
       .analyze();
     expect(results.violations.filter(v => v.impact === 'critical')).toHaveLength(0);
   });
+
+  test('security headers present on frontend and backend', async ({ page, request }) => {
+    const resFrontend = await page.request.get('/');
+    expect(resFrontend.headers()['x-content-type-options']).toBe('nosniff');
+    expect(resFrontend.headers()['x-frame-options']).toBe('DENY');
+    expect(resFrontend.headers()['content-security-policy']).toContain("default-src 'self'");
+    expect(resFrontend.headers()['referrer-policy']).toBeDefined();
+
+    const backendBase = process.env.E2E_BACKEND_URL || 'http://localhost:8080';
+    const resBackend = await request.get(`${backendBase}/api/public/doesnotexist`);
+    expect(resBackend.headers()['x-content-type-options']).toBe('nosniff');
+    expect(resBackend.headers()['x-frame-options']).toBe('DENY');
+    expect(resBackend.headers()['content-security-policy']).toContain("default-src 'self'");
+    expect(resBackend.headers()['referrer-policy']).toBeDefined();
+  });
 });
 
 
