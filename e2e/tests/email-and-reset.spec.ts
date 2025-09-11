@@ -21,6 +21,10 @@ test('email verification end-to-end via dev token endpoint', async ({ page, requ
 
   await page.goto(`/verify-email?token=${token}`);
   await expect(page.getByText(/Email verified successfully/i)).toBeVisible();
+
+  // Using the same token again should fail
+  await page.goto(`/verify-email?token=${token}`);
+  await expect(page.getByText(/Verification failed|token expired/i)).toBeVisible();
 });
 
 test('password reset end-to-end via dev token endpoint', async ({ page, request }) => {
@@ -44,4 +48,10 @@ test('password reset end-to-end via dev token endpoint', async ({ page, request 
   await page.getByLabel('New Password').fill('NewP@ssw0rd!');
   await page.getByRole('button', { name: 'Set New Password' }).click();
   await expect(page.getByText(/Password has been reset/i)).toBeVisible();
+
+  // Using the same token again should fail
+  await page.goto(`/reset-password?token=${token}`);
+  await page.getByLabel('New Password').fill('AnotherP@ss1!');
+  await page.getByRole('button', { name: 'Set New Password' }).click();
+  await expect(page.getByText(/Failed to reset password|invalid or expired/i)).toBeVisible();
 });
