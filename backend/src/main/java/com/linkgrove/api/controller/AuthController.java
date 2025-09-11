@@ -8,6 +8,7 @@ import com.linkgrove.api.dto.InitiatePasswordResetRequest;
 import com.linkgrove.api.dto.PerformPasswordResetRequest;
 import com.linkgrove.api.dto.VerifyEmailRequest;
 import com.linkgrove.api.service.AuthService;
+import com.linkgrove.api.model.User;
 import com.linkgrove.api.service.SecurityUxService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final SecurityUxService securityUxService;
+    private final com.linkgrove.api.repository.UserRepository userRepository;
+    private final com.linkgrove.api.repository.EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final com.linkgrove.api.repository.PasswordResetTokenRepository passwordResetTokenRepository;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -67,5 +71,30 @@ public class AuthController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Auth service is running with database");
+    }
+
+    @GetMapping("/dev/latest-email-verification-token")
+    public ResponseEntity<String> latestEmailVerificationToken(@RequestParam("username") String username) {
+        if (!isDevEnabled()) return ResponseEntity.status(404).build();
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) return ResponseEntity.status(404).build();
+        return emailVerificationTokenRepository.findTopByUserOrderByCreatedAtDesc(user)
+                .map(t -> ResponseEntity.ok(t.getToken()))
+                .orElse(ResponseEntity.status(404).build());
+    }
+
+    @GetMapping("/dev/latest-password-reset-token")
+    public ResponseEntity<String> latestPasswordResetToken(@RequestParam("email") String email) {
+        if (!isDevEnabled()) return ResponseEntity.status(404).build();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(404).build();
+        return passwordResetTokenRepository.findTopByUserOrderByCreatedAtDesc(user)
+                .map(t -> ResponseEntity.ok(t.getToken()))
+                .orElse(ResponseEntity.status(404).build());
+    }
+
+    private boolean isDevEnabled() {
+        String flag = System.getenv("ENABLE_DEV_TOKEN_ENDPOINTS");
+        return flag != null && (flag.equalsIgnoreCase("1") || flag.equalsIgnoreCase("true"));
     }
 }

@@ -66,6 +66,7 @@ services:
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:3001}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
       - TWITTER_SITE=${TWITTER_SITE:-}
+      - ENABLE_DEV_TOKEN_ENDPOINTS=${ENABLE_DEV_TOKEN_ENDPOINTS:-true}
     depends_on:
       - postgres
       - redis
