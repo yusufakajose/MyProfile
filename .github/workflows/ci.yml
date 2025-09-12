@@ -152,10 +152,23 @@ jobs:
           SPRING_RABBITMQ_PORT: 5672
           CORS_ALLOWED_ORIGINS: http://localhost:3001
           PUBLIC_BASE_URL: http://localhost:3001
-          JWT_SECRET: linkgrove_dev_secret_key_0123456789abcdef0123456789abcdef
           ENABLE_DEV_TOKEN_ENDPOINTS: "true"
         run: |
           echo "Backend artifacts:" && ls -l backend/target
+          # Configure JWT secret from GitHub Secrets or generate a strong ephemeral one
+          if [ -z "${JWT_SECRET:-}" ]; then
+            JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          fi
+          if [ -z "$JWT_SECRET" ]; then
+            JWT_SECRET="$(openssl rand -hex 64)"
+          fi
+          echo "::add-mask::$JWT_SECRET"
+          export JWT_SECRET
+          PREV_SECRETS="${{ secrets.JWT_PREVIOUS_SECRETS }}"
+          if [ -n "$PREV_SECRETS" ]; then
+            echo "::add-mask::$PREV_SECRETS"
+            export JWT_PREVIOUS_SECRETS="$PREV_SECRETS"
+          fi
           # Prefer the Spring Boot fat jar, avoid *-plain.jar and *.original
           JAR=$(ls backend/target/*-SNAPSHOT.jar 2>/dev/null | grep -v plain | head -n1)
           if [ -z "$JAR" ]; then
