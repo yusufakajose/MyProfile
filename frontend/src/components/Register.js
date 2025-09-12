@@ -16,6 +16,13 @@ const Register = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const blockClipboard = (e) => {
+    e.preventDefault();
+  };
+  const preventContextMenu = (e) => {
+    e.preventDefault();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -48,7 +55,7 @@ const Register = () => {
                   </IconButton>
                 </InputAdornment>
               )
-            }} />
+            }} inputProps={{ onCopy: blockClipboard, onCut: blockClipboard, onPaste: blockClipboard, onContextMenu: preventContextMenu }} />
             <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading || !username || !email || !password} sx={{ mt: 2 }}>
               {loading ? 'Creating...' : 'Register'}
             </Button>

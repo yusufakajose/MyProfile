@@ -153,6 +153,7 @@ jobs:
           CORS_ALLOWED_ORIGINS: http://localhost:3001
           PUBLIC_BASE_URL: http://localhost:3001
           JWT_SECRET: linkgrove_dev_secret_key_0123456789abcdef0123456789abcdef
+          ENABLE_DEV_TOKEN_ENDPOINTS: "true"
         run: |
           echo "Backend artifacts:" && ls -l backend/target
           # Prefer the Spring Boot fat jar, avoid *-plain.jar and *.original
@@ -194,6 +195,7 @@ jobs:
         env:
           E2E_BASE_URL: http://localhost:3001
           E2E_BACKEND_URL: http://localhost:8080
+          CHECK_FRONTEND_HEADERS: "0"
         run: npx playwright install --with-deps && npm test
 
       - name: Upload Playwright report

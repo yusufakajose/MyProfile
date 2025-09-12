@@ -14,6 +14,13 @@ const ResetPasswordPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const blockClipboard = (e) => {
+    e.preventDefault();
+  };
+  const preventContextMenu = (e) => {
+    e.preventDefault();
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
@@ -46,7 +53,7 @@ const ResetPasswordPage = () => {
                   </IconButton>
                 </InputAdornment>
               )
-            }} />
+            }} inputProps={{ onCopy: blockClipboard, onCut: blockClipboard, onPaste: blockClipboard, onContextMenu: preventContextMenu }} />
             <Button type="submit" variant="contained" disabled={loading || !password || !token} sx={{ mt: 2 }}>Set New Password</Button>
           </Box>
         </CardContent>
