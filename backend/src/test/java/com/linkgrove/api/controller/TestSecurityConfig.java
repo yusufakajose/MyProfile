@@ -25,7 +25,9 @@ public class TestSecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/public/click/**").permitAll()
                 .requestMatchers("/r/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
-                .requestMatchers("/api/links/**").authenticated()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/links/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/analytics/**").hasAnyRole("USER", "ADMIN")
                 .anyRequest().permitAll()
             )
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
