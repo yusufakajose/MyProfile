@@ -23,13 +23,14 @@ const Favicon = ({ url, size = 18 }) => {
   useEffect(() => { setFailed(false); setSrc(host ? `https://icons.duckduckgo.com/ip3/${host}.ico` : null); }, [host]);
   if (!host || failed || !src) return null;
   return (
-    <img
+    <Box
+      component="img"
       src={src}
       width={size}
       height={size}
       alt={`favicon of ${host}`}
       loading="lazy"
-      style={{ borderRadius: 4 }}
+      sx={{ borderRadius: '4px' }}
       onError={() => {
         if (src && src.includes('duckduckgo')) setSrc(`https://www.google.com/s2/favicons?domain=${host}&sz=${size * 2}`);
         else setFailed(true);
@@ -745,9 +746,9 @@ const LinkManager = () => {
                 <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)}</Typography>
                 <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
                   {qrOptions.format === 'svg' ? (
-                    <img alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} style={{ maxWidth: '100%', height: 'auto' }} />
+                    <Box component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} sx={{ maxWidth: '100%', height: 'auto' }} />
                   ) : (
-                    <img alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} style={{ imageRendering: 'pixelated' }} />
+                    <Box component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} sx={{ imageRendering: 'pixelated' }} />
                   )}
                 </Box>
               </Box>

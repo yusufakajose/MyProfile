@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
+import createCache from '@emotion/cache';
+import { CacheProvider } from '@emotion/react';
 import App from './App';
 import LinearProgress from '@mui/material/LinearProgress';
 import { subscribeLoading } from './api/loadingTracker';
@@ -118,14 +121,18 @@ const Root = () => {
     }),
   }), [mode]);
   const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode]);
+  const nonce = typeof document !== 'undefined' ? (document.querySelector('meta[name="csp-nonce"]')?.getAttribute('content') || undefined) : undefined;
+  const emotionCache = useMemo(() => createCache({ key: 'mui', nonce }), [nonce]);
   return (
     <BrowserRouter>
       <ColorModeContext.Provider value={colorMode}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <GlobalTopProgress />
-          <App />
-        </ThemeProvider>
+        <CacheProvider value={emotionCache}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <GlobalTopProgress />
+            <App />
+          </ThemeProvider>
+        </CacheProvider>
       </ColorModeContext.Provider>
     </BrowserRouter>
   );
@@ -136,9 +143,9 @@ const GlobalTopProgress = () => {
   React.useEffect(() => subscribeLoading(setCount), []);
   if (count <= 0) return null;
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 2000 }}>
+    <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 2000 }}>
       <LinearProgress />
-    </div>
+    </Box>
   );
 };
 

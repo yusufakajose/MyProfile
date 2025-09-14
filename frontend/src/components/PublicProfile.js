@@ -48,13 +48,14 @@ const Favicon = ({ url, size = 20 }) => {
   }, [host]);
   if (!host || failed || !src) return <LinkIcon sx={{ fontSize: size, color: 'action.active' }} />;
   return (
-    <img
+    <Box
+      component="img"
       src={src}
       width={size}
       height={size}
       alt={`favicon of ${host}`}
       loading="lazy"
-      style={{ borderRadius: 4 }}
+      sx={{ borderRadius: 1 }}
       onError={() => {
         if (src && src.includes('duckduckgo')) setSrc(`https://www.google.com/s2/favicons?domain=${host}&sz=${size * 2}`);
         else setFailed(true);
@@ -233,16 +234,16 @@ const PublicProfile = () => {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem onClick={() => { openShareWindow(buildTargets(profileUrl).x); setShareAnchorEl(null); }}>
-          <TwitterIcon fontSize="small" style={{ marginRight: 8 }} /> Share on X/Twitter
+          <TwitterIcon fontSize="small" sx={{ mr: 1 }} /> Share on X/Twitter
         </MenuItem>
         <MenuItem onClick={() => { openShareWindow(buildTargets(profileUrl).facebook); setShareAnchorEl(null); }}>
-          <FacebookIcon fontSize="small" style={{ marginRight: 8 }} /> Share on Facebook
+          <FacebookIcon fontSize="small" sx={{ mr: 1 }} /> Share on Facebook
         </MenuItem>
         <MenuItem onClick={() => { openShareWindow(buildTargets(profileUrl).whatsapp); setShareAnchorEl(null); }}>
-          <WhatsAppIcon fontSize="small" style={{ marginRight: 8 }} /> Share on WhatsApp
+          <WhatsAppIcon fontSize="small" sx={{ mr: 1 }} /> Share on WhatsApp
         </MenuItem>
         <MenuItem onClick={() => { openShareWindow(buildTargets(profileUrl).linkedin); setShareAnchorEl(null); }}>
-          <LinkedInIcon fontSize="small" style={{ marginRight: 8 }} /> Share on LinkedIn
+          <LinkedInIcon fontSize="small" sx={{ mr: 1 }} /> Share on LinkedIn
         </MenuItem>
         <MenuItem onClick={() => { copyToClipboard(profileUrl); setShareAnchorEl(null); }}>
           Copy profile link
@@ -305,16 +306,16 @@ const PublicProfile = () => {
         {linkShare.link && (
           <>
             <MenuItem onClick={() => { openShareWindow(buildTargets(shortUrlFor(linkShare.link)).x); setLinkShare({ anchorEl: null, link: null }); }}>
-              <TwitterIcon fontSize="small" style={{ marginRight: 8 }} /> Share on X/Twitter
+              <TwitterIcon fontSize="small" sx={{ mr: 1 }} /> Share on X/Twitter
             </MenuItem>
             <MenuItem onClick={() => { openShareWindow(buildTargets(shortUrlFor(linkShare.link)).facebook); setLinkShare({ anchorEl: null, link: null }); }}>
-              <FacebookIcon fontSize="small" style={{ marginRight: 8 }} /> Share on Facebook
+              <FacebookIcon fontSize="small" sx={{ mr: 1 }} /> Share on Facebook
             </MenuItem>
             <MenuItem onClick={() => { openShareWindow(buildTargets(shortUrlFor(linkShare.link)).whatsapp); setLinkShare({ anchorEl: null, link: null }); }}>
-              <WhatsAppIcon fontSize="small" style={{ marginRight: 8 }} /> Share on WhatsApp
+              <WhatsAppIcon fontSize="small" sx={{ mr: 1 }} /> Share on WhatsApp
             </MenuItem>
             <MenuItem onClick={() => { openShareWindow(buildTargets(shortUrlFor(linkShare.link)).linkedin); setLinkShare({ anchorEl: null, link: null }); }}>
-              <LinkedInIcon fontSize="small" style={{ marginRight: 8 }} /> Share on LinkedIn
+              <LinkedInIcon fontSize="small" sx={{ mr: 1 }} /> Share on LinkedIn
             </MenuItem>
             <MenuItem onClick={() => { copyToClipboard(shortUrlFor(linkShare.link)); setLinkShare({ anchorEl: null, link: null }); }}>
               Copy link

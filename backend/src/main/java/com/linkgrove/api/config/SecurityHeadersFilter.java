@@ -9,13 +9,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Component
 public class SecurityHeadersFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        // Content Security Policy - allow self, inline styles for MUI, images data: for QR
-        String csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'";
+        // Generate per-request CSP nonce for style tags (used by frontend frameworks like Emotion/MUI)
+        byte[] nonceBytes = new byte[16];
+        new SecureRandom().nextBytes(nonceBytes);
+        String cspNonce = Base64.getEncoder().encodeToString(nonceBytes);
+
+        // Content Security Policy - remove style-src 'unsafe-inline', allow styles only with matching nonce
+        String csp = "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-" + cspNonce + "'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'";
         response.setHeader("Content-Security-Policy", csp);
         // HSTS (only if behind HTTPS)
         String proto = request.getHeader("X-Forwarded-Proto");
