@@ -22,7 +22,15 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         String cspNonce = Base64.getEncoder().encodeToString(nonceBytes);
 
         // Content Security Policy - remove style-src 'unsafe-inline', allow styles only with matching nonce
-        String csp = "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-" + cspNonce + "'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'";
+        // Allow Google Fonts stylesheet and font files explicitly
+        String csp = "default-src 'self'; " +
+                "script-src 'self'; " +
+                "style-src 'self' 'nonce-" + cspNonce + "' https://fonts.googleapis.com; " +
+                "font-src 'self' https://fonts.gstatic.com data:; " +
+                "img-src 'self' data:; " +
+                "object-src 'none'; " +
+                "frame-ancestors 'none'; " +
+                "base-uri 'self'";
         response.setHeader("Content-Security-Policy", csp);
         // HSTS (only if behind HTTPS)
         String proto = request.getHeader("X-Forwarded-Proto");
