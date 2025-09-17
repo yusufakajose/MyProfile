@@ -12,16 +12,17 @@
 - [x] Referrer/device daily aggregates + APIs
 - [x] Analytics APIs: summary, timeseries, per-link timeseries, top-links, referrers, devices
 - [x] CSV exports: timeseries, top-links, referrers, devices
-- [ ] CSV exports: per-link timeseries and per-link variants (to mirror UI)
+- [x] CSV exports: per-link timeseries and per-link variants (to mirror UI)
 - [x] Rate limiting for public routes with headers (limit/remaining/window, Retry-After) + admin metrics endpoint
 - [x] Programmatic DB indexes at boot (`IndexInitializer`) for links and aggregates
 - [x] Webhooks: config + HMAC-SHA256 signing, delivery logs, resend; scheduled retries with exponential backoff, DLQ listing and resend-all
 - [x] Public profile 404 handling
 - [~] Flyway: enabled with baseline; continue adding migrations for new features
-- [ ] Geo analytics (country/region) daily aggregates + APIs + CSV
+- [~] Geo analytics (country) daily aggregates + APIs + CSV (enabled when `GEOIP_ENABLED=true` and DB mounted)
 - [x] A/B tests & weighted rotation for links (link variants with weights)
 - [ ] Custom domains (starter version: domain mapping + host-based routing)
-- [~] Observability: structured logs + health/metrics done (Actuator + Prometheus); add trace IDs
+- [x] Observability: structured JSON logs + request IDs; health/metrics (Actuator + Prometheus)
+  - [ ] Add distributed trace IDs (OTLP to Jaeger) and document
 - [ ] Testability: Testcontainers integration tests (Postgres+Redis+RabbitMQ), contract tests, smoke tests
 - [ ] Admin UX APIs: webhook failures view, queues, rate-limit overviews beyond raw counters
 
@@ -34,9 +35,9 @@
   - Config: qr.logo.allowedHosts (comma-separated), qr.logo.allowedTlds (optional)
   - Enforce alongside https/content-type/size checks; return structured 400 JSON on violation
   - Unit + integration tests for allowed vs blocked hosts
-- [ ] Deterministic 429 test for QR endpoints
+- [~] Deterministic 429 test for QR endpoints (basic 429 test exists; add low-threshold profile)
   - Override ratelimit in test profile to a low threshold; assert 429 + Retry-After reliably
-- [ ] Frontend: per-link Sources CSV export button wiring
+- [x] Frontend: per-link Sources CSV export button wiring
   - Implement download logic for per-link Sources export in `AnalyticsDashboard.js`
 - [ ] Nginx: expand social bot UA map
   - Add additional known bot UAs and verify routing to meta endpoint
@@ -48,21 +49,22 @@
 - [x] Analytics Dashboard: summary, timeseries (incl. per-link), top links, referrers/devices charts + CSV exports
 - [x] Public Profile page with theme colors; friendly error state; click tracking
 - [x] Webhook Settings: configure URL/active; list recent + DLQ; resend / resend-all
-- [~] Centralize API base URL via `REACT_APP_API_URL` (client in place; env added; removed hardcoded usage in key components)
+- [~] Centralize API base URL via `REACT_APP_API_URL` (interceptor + silent refresh wired)
 - [ ] Minimal public layout variant (hide dashboard header on public routes)
 - [ ] Theming presets (light/dark); later reintroduce non-buggy banner
 - [ ] Better empty/error/skeleton states across analytics + public profile
-- [ ] Admin view (rate-limit metrics, webhook failures)
+- [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations
 - [x] Boot-time index initialization (dev convenience)
-- [ ] Re-enable Flyway with baseline for existing DB; add migrations for links/tags/aggregates/webhooks/indexes
+- [x] Re-enable Flyway with baseline for existing DB (baseline-version=0); add migrations through V15
 - [ ] Validate indexes with EXPLAIN on key queries and lock in via migration
 
 ## Rate Limiting & Security
 - [x] Sliding-window limiter (Redis ZSET) for `/r/**` and `/api/public/**` with headers and admin metrics
-- [ ] Per-route limits as config; surfaced in admin UI
+- [ ] Per-route limits as config; surfaced in admin UI; unify X-RateLimit-* headers for QR/public
 - [ ] Hardened input validation across controllers (`@Valid` + constraints)
+  - [ ] QR logo host allowlist
 
 ## Webhooks
 - [x] `link.click` event dispatch with signed HMAC
@@ -75,38 +77,42 @@
 - [x] Git initialized; `.gitignore` excludes build artifacts/env/IDE
 - [ ] CI (build → test → package Docker images for backend/frontend)
 - [ ] Docs: Update root README CI badge URL (replace OWNER/REPO after pushing to GitHub)
-- [ ] Docker: serve frontend via Nginx; pass API URL via env; verify CORS; one-command compose
+- [x] Docker: serve frontend via Nginx; CSP nonce injection; API proxied to backend
+  - [ ] Pass API URL via env consistently (`REACT_APP_API_URL`) and verify CORS for non-proxy setups
 - [ ] Developer docs: local `.env` setup; `start.sh` reads env; troubleshooting
+  - [ ] Add GeoIP setup docs (`GEOIP_ENABLED`, `GEOIP_DB_PATH`) and compose volume mount
+  - [ ] Default `ENABLE_DEV_TOKEN_ENDPOINTS` to false in compose
 
 ## Testing
 - [ ] Integration tests: public profile fetch, click tracking, cache behavior, analytics endpoints (JWT + 401/403)
 - [ ] Worker tests with Testcontainers for daily upserts + unique visitor increments
 - [ ] Frontend tests for Link Manager, Analytics Dashboard, Webhook Settings
-- [ ] Rate limiter tests; Flyway migration tests
+- [ ] Rate limiter tests; Flyway migration tests; QR low-threshold 429 test
 
 ## Cleanup
 - [ ] Remove temporary `/member-login` alias; provide canonical login route
+  - [ ] Update e2e and components to use canonical route
+  - [ ] Stop tracking Playwright HTML reports; ignore `e2e/playwright-report/`
 - [ ] 404 route and redirect unknown `/u/:username` to friendly page
 
 ---
 
 ## Prioritized Next Steps (Easy wins first)
-1) Re-enable Flyway safely
-   - [ ] Add baseline migration for existing schema; include webhooks/aggregates/tags indexes
-   - [ ] Set `spring.jpa.hibernate.ddl-auto=validate`, `spring.flyway.enabled=true`
-   - [ ] Verify boot with clean DB and with existing DB (baseline)
+1) Flyway verification (post-baseline)
+   - [ ] Verify boot with clean DB and pre-existing DB (baseline=0) in docker-compose
 2) Frontend polish
-   - [ ] Use minimal layout for public profile routes
-   - [ ] Sweep for any remaining absolute URLs; ensure `REACT_APP_API_URL` used everywhere
+   - [ ] Use minimal layout for public profile routes (header hidden already; extract layout)
+   - [ ] Sweep for any remaining absolute URLs; default to relative `/api` in dev
 3) Observability basics
-   - [ ] Structured JSON logs; request/trace IDs; health/liveness endpoints documented
+   - [ ] Add distributed tracing to Jaeger; document endpoints and correlation via `X-Request-Id`
 4) Tests (incremental)
    - [ ] Worker upsert happy-path with Testcontainers
    - [ ] Analytics endpoints 200/401/403 integration tests
 5) CI bootstrap
    - [ ] GitHub Actions: backend build + tests; frontend build; artifact upload
+   - [ ] Lint to ensure reports and build artifacts aren’t committed
 6) Geo analytics (starter)
-   - [ ] IP → country via lightweight DB/service; daily aggregate and charts/CSV
+   - [ ] Enable via env + mount; expose `/api/admin/metrics/geo`; add basic e2e
 
 ---
 
