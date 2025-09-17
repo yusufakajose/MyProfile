@@ -31,18 +31,22 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/auth/dev/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/public/click/**").permitAll()
-                .requestMatchers("/r/**").permitAll()
-                .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/links/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/api/analytics/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                var reg = auth
+                    .requestMatchers("/api/auth/**").permitAll();
+                if (isDevTokenEndpointsEnabled()) {
+                    reg = reg.requestMatchers(HttpMethod.GET, "/api/auth/dev/**").permitAll();
+                }
+                reg
+                    .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/public/click/**").permitAll()
+                    .requestMatchers("/r/**").permitAll()
+                    .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/api/links/**").hasAnyRole("USER", "ADMIN")
+                    .requestMatchers("/api/analytics/**").hasAnyRole("USER", "ADMIN")
+                    .anyRequest().authenticated();
+            })
             .addFilterBefore(securityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -78,5 +82,10 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    private boolean isDevTokenEndpointsEnabled() {
+        String flag = System.getenv("ENABLE_DEV_TOKEN_ENDPOINTS");
+        return flag != null && (flag.equalsIgnoreCase("1") || flag.equalsIgnoreCase("true"));
     }
 }
