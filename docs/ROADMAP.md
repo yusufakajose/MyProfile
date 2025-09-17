@@ -64,6 +64,7 @@
 - [x] Sliding-window limiter (Redis ZSET) for `/r/**` and `/api/public/**` with headers and admin metrics
 - [ ] Per-route limits as config; surfaced in admin UI; unify X-RateLimit-* headers for QR/public
 - [ ] Hardened input validation across controllers (`@Valid` + constraints)
+  - [x] Dev endpoints hardening: default dev token endpoints OFF; conditional permit based on env
   - [ ] QR logo host allowlist
 
 ## Webhooks
