@@ -107,6 +107,7 @@
 3) Observability basics
    - [ ] Add distributed tracing to Jaeger; document endpoints and correlation via `X-Request-Id`
    - [x] Propagate `X-Request-Id` from Nginx to backend for end-to-end correlation
+   - [x] Gate HSTS to HTTPS only in Nginx
 4) Tests (incremental)
    - [ ] Worker upsert happy-path with Testcontainers
    - [ ] Analytics endpoints 200/401/403 integration tests
