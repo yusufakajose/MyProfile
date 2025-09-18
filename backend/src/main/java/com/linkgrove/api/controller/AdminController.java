@@ -16,6 +16,7 @@ public class AdminController {
 
     private final org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
     private final WebhookDeliveryRepository webhookDeliveryRepository;
+    private final com.linkgrove.api.service.GeoIpService geoIpService;
 
     @GetMapping("/health")
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,6 +102,15 @@ public class AdminController {
         last24h.put("dlqTopDestinations", dlqTop24h);
         out.put("dlqTopDestinationsAll", dlqTopAll);
         out.put("last24h", last24h);
+        return ResponseEntity.ok(out);
+    }
+
+    @GetMapping("/metrics/geo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getGeoMetrics() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("enabled", geoIpService.isEnabled());
+        // Placeholder placeholders for future enrichment: last consumed click, top countries, etc.
         return ResponseEntity.ok(out);
     }
 }

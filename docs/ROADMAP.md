@@ -115,7 +115,8 @@
    - [ ] GitHub Actions: backend build + tests; frontend build; artifact upload
    - [ ] Lint to ensure reports and build artifacts aren’t committed
 6) Geo analytics (starter)
-   - [ ] Enable via env + mount; expose `/api/admin/metrics/geo`; add basic e2e
+   - [ ] Enable via env + mount; add basic e2e
+   - [x] Expose `/api/admin/metrics/geo` (reports GeoIP enabled flag)
 
 ---
 
@@ -124,7 +125,8 @@
   - [ ] Provide script to fetch MaxMind GeoLite2 Country DB and set env (Fish + Bash): `GEOIP_ENABLED=true`, `GEOIP_DB_PATH=/abs/path/GeoLite2-Country.mmdb`
   - [ ] On boot, log a clear warning and expose actuator info if GeoIP is disabled
 - [ ] Admin/metrics
-  - [ ] Add `/api/admin/metrics/geo` to report GeoIP status, last processed click time, and top countries (last 24h)
+  - [x] Add `/api/admin/metrics/geo` to report GeoIP status (enabled flag)
+  - [ ] Extend with last processed click time and top countries (last 24h)
 - [ ] Simulation utilities
   - [ ] CLI script to generate sample clicks using `X-Forwarded-For` with well-known public IPs (e.g., 8.8.8.8, 1.1.1.1) via `/r/{id}` or `/r/a/{alias}`
   - [ ] Note: LAN/private IPs (e.g., 192.168.x.x) won’t resolve to a country

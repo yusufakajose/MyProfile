@@ -51,6 +51,10 @@ public class GeoIpService {
             return null;
         }
     }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
 }
 
 

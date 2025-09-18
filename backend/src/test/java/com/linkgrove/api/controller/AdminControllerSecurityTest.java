@@ -33,6 +33,9 @@ class AdminControllerSecurityTest {
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.linkgrove.api.config.JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    com.linkgrove.api.service.GeoIpService geoIpService;
+
     @Test
     @WithAnonymousUser
     void adminHealth_unauthenticated_is401() throws Exception {
@@ -51,6 +54,28 @@ class AdminControllerSecurityTest {
     @WithMockUser(roles = {"ADMIN"})
     void adminHealth_adminRole_is200() throws Exception {
         mockMvc.perform(get("/api/admin/health").accept(MediaType.TEXT_PLAIN))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void geoMetrics_unauthenticated_is401() throws Exception {
+        mockMvc.perform(get("/api/admin/metrics/geo").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = {"USER"})
+    void geoMetrics_userRole_is403() throws Exception {
+        mockMvc.perform(get("/api/admin/metrics/geo").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = {"ADMIN"})
+    void geoMetrics_adminRole_is200() throws Exception {
+        org.mockito.Mockito.when(geoIpService.isEnabled()).thenReturn(false);
+        mockMvc.perform(get("/api/admin/metrics/geo").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 }
