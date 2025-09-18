@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
         const exp = getJwtExpSeconds(token);
         const shouldRefresh = (!!refreshToken && (!token || exp - nowSec < 60));
         if (shouldRefresh) {
-          const apiRoot = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+          const apiRoot = process.env.REACT_APP_API_URL || '/api';
           const baseUrl = apiRoot.endsWith('/api') ? apiRoot : `${apiRoot}/api`;
           const res = await fetch(`${baseUrl}/auth/refresh`, {
             method: 'POST',

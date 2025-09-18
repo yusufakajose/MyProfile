@@ -49,7 +49,7 @@
 - [x] Analytics Dashboard: summary, timeseries (incl. per-link), top links, referrers/devices charts + CSV exports
 - [x] Public Profile page with theme colors; friendly error state; click tracking
 - [x] Webhook Settings: configure URL/active; list recent + DLQ; resend / resend-all
-- [~] Centralize API base URL via `REACT_APP_API_URL` (interceptor + silent refresh wired)
+- [x] Centralize API base URL via `REACT_APP_API_URL` (interceptor + silent refresh wired; default to relative `/api`)
 - [ ] Minimal public layout variant (hide dashboard header on public routes)
 - [ ] Theming presets (light/dark); later reintroduce non-buggy banner
 - [ ] Better empty/error/skeleton states across analytics + public profile
