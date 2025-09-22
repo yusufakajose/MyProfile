@@ -35,8 +35,8 @@
   - Config: qr.logo.allowedHosts (comma-separated), qr.logo.allowedTlds (optional)
   - Enforce alongside https/content-type/size checks; return structured 400 JSON on violation
   - Unit + integration tests for allowed vs blocked hosts
-- [~] Deterministic 429 test for QR endpoints (basic 429 test exists; add low-threshold profile)
-  - Override ratelimit in test profile to a low threshold; assert 429 + Retry-After reliably
+- [x] Deterministic 429 test for QR endpoints (low-threshold profile)
+  - Override ratelimit in test properties; assert 429 + Retry-After reliably
 - [x] Frontend: per-link Sources CSV export button wiring
   - Implement download logic for per-link Sources export in `AnalyticsDashboard.js`
 - [ ] Nginx: expand social bot UA map
