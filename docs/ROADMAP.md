@@ -52,8 +52,9 @@
 - [x] Centralize API base URL via `REACT_APP_API_URL` (interceptor + silent refresh wired; default to relative `/api`)
 - [x] Minimal public layout variant (hide dashboard header on public routes)
 - [ ] Theming presets (light/dark); later reintroduce non-buggy banner
-- [~] Better empty/error/skeleton states across analytics + public profile
+- [x] Better empty/error/skeleton states across analytics + public profile
   - [x] Public profile: retryable error state and empty state
+  - [x] Analytics dashboard: retryable error state + empty state guidance
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Grid,
   Card,
@@ -39,6 +40,43 @@ import {
 import client from '../api/client';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+const AnalyticsErrorState = ({ message, onRetry }) => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh" px={2}>
+    <Card sx={{ maxWidth: 520, width: '100%' }}>
+      <CardContent>
+        <Alert severity="error" sx={{ mb: 2 }}>{message || 'Failed to load analytics data.'}</Alert>
+        <Typography variant="body1" gutterBottom>
+          We couldn’t load your analytics right now. Please check your connection and try again.
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
+          <Button variant="contained" onClick={onRetry} aria-label="Retry loading analytics">Retry</Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  </Box>
+);
+
+const AnalyticsEmptyState = ({ onRefresh }) => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh" px={2}>
+    <Card sx={{ maxWidth: 560, width: '100%', textAlign: 'center', p: { xs: 3, md: 4 } }}>
+      <CardContent>
+        <Typography variant="h5" gutterBottom>No analytics yet</Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Share your LinkGrove profile or QR code to start collecting clicks. Once visitors interact with your links, charts and reports will appear here automatically.
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+          <Button variant="contained" component={RouterLink} to="/links" aria-label="Go to Link Manager">
+            Manage links
+          </Button>
+          <Button variant="outlined" onClick={onRefresh} aria-label="Refresh analytics">
+            Refresh
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  </Box>
+);
 
 const AnalyticsDashboard = () => {
   const [summaryData, setSummaryData] = useState(null);
@@ -292,20 +330,31 @@ const AnalyticsDashboard = () => {
   }
 
   if (error) {
-    return (
-      <Alert
-        severity="error"
-        sx={{ mb: 2 }}
-        action={<Button color="inherit" size="small" onClick={fetchAnalyticsData} aria-label="Retry loading analytics">Retry</Button>}
-      >
-        {error}
-      </Alert>
-    );
+    return <AnalyticsErrorState message={error} onRetry={fetchAnalyticsData} />;
   }
 
   const timeseries = (selectedLinkId ? perLinkSeries : timeseriesData?.timeseriesData) || [];
-  const hasTimeseries = timeseries.length > 0;
   const topLinks = topLinksData?.topLinks || [];
+  const sources = sourcesData?.sources || [];
+  const devices = devicesData?.devices || [];
+  const variants = variantsData?.variants || [];
+  const countries = countriesData?.countries || [];
+  const globalTimeseries = timeseriesData?.timeseriesData || [];
+
+  const hasTrafficData =
+    (summaryData?.totalClicks ?? 0) > 0 ||
+    globalTimeseries.some((row) => (row?.clicks ?? 0) > 0 || (row?.uniqueVisitors ?? 0) > 0) ||
+    topLinks.some((link) => (link?.clickCount ?? 0) > 0) ||
+    sources.some((source) => (source?.clicks ?? 0) > 0) ||
+    devices.some((device) => (device?.clicks ?? 0) > 0) ||
+    variants.some((variant) => (variant?.clicks ?? 0) > 0) ||
+    countries.some((country) => (country?.clicks ?? 0) > 0);
+
+  if (!hasTrafficData) {
+    return <AnalyticsEmptyState onRefresh={fetchAnalyticsData} />;
+  }
+
+  const hasTimeseries = timeseries.length > 0;
 
   const renderNoData = (label = 'No data available') => (
     <Box display="flex" alignItems="center" justifyContent="center" sx={{ color: 'text.secondary', py: 4 }}>
