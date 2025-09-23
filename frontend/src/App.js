@@ -5,6 +5,7 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import Header from './components/Header';
 import PublicProfile from './components/PublicProfile';
 import NotFound from './components/NotFound';
+import PublicLayout from './components/PublicLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -105,10 +106,12 @@ function App() {
             </Routes>
           </Container>
         ) : (
-          <Routes>
-            <Route path="/u/:username" element={<PublicProfile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PublicLayout>
+            <Routes>
+              <Route path="/u/:username" element={<PublicProfile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PublicLayout>
         )}
       </AuthProvider>
     </Box>

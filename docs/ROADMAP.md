@@ -102,8 +102,8 @@
 1) Flyway verification (post-baseline)
    - [x] Verify boot with clean DB and pre-existing DB (baseline=0) in docker-compose
 2) Frontend polish
-   - [ ] Use minimal layout for public profile routes (header hidden already; extract layout)
-   - [ ] Sweep for any remaining absolute URLs; default to relative `/api` in dev
+   - [x] Use minimal layout for public profile routes (header hidden already; extract layout)
+   - [x] Sweep for any remaining absolute URLs; default to relative `/api` in dev
 3) Observability basics
    - [ ] Add distributed tracing to Jaeger; document endpoints and correlation via `X-Request-Id`
    - [x] Propagate `X-Request-Id` from Nginx to backend for end-to-end correlation

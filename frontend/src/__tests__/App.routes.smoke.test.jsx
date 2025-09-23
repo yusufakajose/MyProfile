@@ -2,7 +2,17 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import App from '../App';
+// Mock API client to avoid importing axios ESM in tests
+jest.mock('../api/client', () => ({
+  __esModule: true,
+  default: {
+    defaults: { baseURL: '/api' },
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  }
+}));
 
 jest.mock('../components/ProtectedRoute', () => ({ children }) => <>{children}</>);
 
@@ -18,6 +28,9 @@ jest.mock('../components/Login', () => () => <div>Login</div>);
 jest.mock('../components/Register', () => () => <div>Register</div>);
 jest.mock('../components/PublicProfile', () => () => <div>Public Profile</div>);
 jest.mock('../components/Header', () => () => <div>Header</div>);
+
+// Import App after mocks are set up
+const App = require('../App').default;
 
 describe('App route smoke rendering', () => {
   test('renders Links on /links', () => {
