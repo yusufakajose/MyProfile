@@ -67,6 +67,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
       - TWITTER_SITE=${TWITTER_SITE:-}
       - ENABLE_DEV_TOKEN_ENDPOINTS=${ENABLE_DEV_TOKEN_ENDPOINTS:-false}
+      - GEOIP_ENABLED=${GEOIP_ENABLED:-true}
+      - GEOIP_DB_PATH=${GEOIP_DB_PATH:-/geo/GeoLite2-Country.mmdb}
     depends_on:
       - postgres
       - redis
@@ -76,6 +78,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    volumes:
+      - ../geo/GeoLite2-Country.mmdb:/geo/GeoLite2-Country.mmdb:ro
 
   frontend:
     build:

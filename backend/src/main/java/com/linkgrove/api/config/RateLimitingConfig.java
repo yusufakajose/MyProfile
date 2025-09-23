@@ -1,6 +1,5 @@
 package com.linkgrove.api.config;
 
-import com.linkgrove.api.exception.RateLimitExceededException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,18 +56,24 @@ public class RateLimitingConfig extends OncePerRequestFilter {
         var ops = redisTemplate.opsForZSet();
         ops.removeRangeByScore(key, 0, cutoff);
         Long current = ops.zCard(key);
-        if (current != null && current >= rule.maxRequests) {
-            throw new RateLimitExceededException("Too many requests", rule.windowSeconds);
+        long usedSoFar = current == null ? 0L : current;
+        if (usedSoFar >= rule.maxRequests) {
+            response.setStatus(429);
+            response.setHeader("Retry-After", String.valueOf(rule.windowSeconds));
+            response.setHeader("X-RateLimit-Limit", String.valueOf(rule.maxRequests));
+            response.setHeader("X-RateLimit-Window", String.valueOf(rule.windowSeconds));
+            response.setHeader("X-RateLimit-Remaining", "0");
+            return;
         }
         ops.add(key, String.valueOf(nowMs), nowMs);
         redisTemplate.expire(key, Duration.ofSeconds(rule.windowSeconds + 5));
 
-        // Expose remaining budget for clients (best-effort)
-        if (isQrPath(path)) {
-            long used = (current == null ? 0 : current) + 1L; // include this request
-            long remaining = Math.max(0, rule.maxRequests - used);
-            response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
-        }
+        // Expose rate limit headers for all guarded endpoints
+        long used = usedSoFar + 1L; // include this request
+        long remaining = Math.max(0, rule.maxRequests - used);
+        response.setHeader("X-RateLimit-Limit", String.valueOf(rule.maxRequests));
+        response.setHeader("X-RateLimit-Window", String.valueOf(rule.windowSeconds));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
 
         filterChain.doFilter(request, response);
     }

@@ -100,7 +100,7 @@
 
 ## Prioritized Next Steps (Easy wins first)
 1) Flyway verification (post-baseline)
-   - [ ] Verify boot with clean DB and pre-existing DB (baseline=0) in docker-compose
+   - [x] Verify boot with clean DB and pre-existing DB (baseline=0) in docker-compose
 2) Frontend polish
    - [ ] Use minimal layout for public profile routes (header hidden already; extract layout)
    - [ ] Sweep for any remaining absolute URLs; default to relative `/api` in dev
