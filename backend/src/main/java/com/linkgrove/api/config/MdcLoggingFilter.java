@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.micrometer.tracing.Tracer;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
@@ -24,6 +25,12 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
     public static final String MDC_STATUS = "httpStatus";
     public static final String MDC_CLIENT_IP = "clientIp";
     public static final String MDC_USERNAME = "username";
+
+    private final Tracer tracer;
+
+    public MdcLoggingFilter(Tracer tracer) {
+        this.tracer = tracer;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)

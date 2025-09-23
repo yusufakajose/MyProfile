@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Card, CardContent, TextField, Button, Typography, Alert, Stack, Avatar } from '@mui/material';
+import { Box, Card, CardContent, TextField, Button, Typography, Alert, Stack, Avatar, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
 
@@ -17,6 +17,31 @@ const ProfileSettings = () => {
   const [themeAccentColor, setThemeAccentColor] = useState('');
   const [themeBackgroundColor, setThemeBackgroundColor] = useState('');
   const [themeTextColor, setThemeTextColor] = useState('');
+  const [themePreset, setThemePreset] = useState('custom');
+
+  const presets = [
+    { id: 'custom', label: 'Custom', primary: '', accent: '', background: '', text: '' },
+    { id: 'light', label: 'Light', primary: '#1976d2', accent: '#1f2937', background: '#ffffff', text: '#111827' },
+    { id: 'dark', label: 'Dark', primary: '#90caf9', accent: '#f28b82', background: '#0f172a', text: '#e2e8f0' },
+    { id: 'ocean', label: 'Ocean', primary: '#0ea5e9', accent: '#22d3ee', background: '#082f49', text: '#f1f5f9' },
+    { id: 'sunset', label: 'Sunset', primary: '#f97316', accent: '#facc15', background: '#1f2937', text: '#f8fafc' },
+    { id: 'forest', label: 'Forest', primary: '#16a34a', accent: '#a3e635', background: '#0b3d2e', text: '#f1f5f9' }
+  ];
+
+  const applyPreset = (presetId) => {
+    const preset = presets.find((p) => p.id === presetId) || presets[0];
+    setThemePreset(preset.id);
+    setThemePrimaryColor(preset.primary);
+    setThemeAccentColor(preset.accent);
+    setThemeBackgroundColor(preset.background);
+    setThemeTextColor(preset.text);
+  };
+
+  const handleColorChange = (setter) => (event) => {
+    const value = event.target.value;
+    setter(value);
+    setThemePreset('custom');
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -29,10 +54,16 @@ const ProfileSettings = () => {
         setProfileImageUrl(res.data.profileImageUrl || '');
         setUsername(res.data.username || authUser?.username || '');
         setEmailVerified(Boolean(res.data.emailVerified));
-        setThemePrimaryColor(res.data.themePrimaryColor || '');
-        setThemeAccentColor(res.data.themeAccentColor || '');
-        setThemeBackgroundColor(res.data.themeBackgroundColor || '');
-        setThemeTextColor(res.data.themeTextColor || '');
+        const primary = res.data.themePrimaryColor || '';
+        const accent = res.data.themeAccentColor || '';
+        const background = res.data.themeBackgroundColor || '';
+        const text = res.data.themeTextColor || '';
+        setThemePrimaryColor(primary);
+        setThemeAccentColor(accent);
+        setThemeBackgroundColor(background);
+        setThemeTextColor(text);
+        const matchedPreset = presets.find((p) => p.primary === primary && p.accent === accent && p.background === background && p.text === text);
+        setThemePreset(matchedPreset ? matchedPreset.id : 'custom');
       } catch (e) {
         setError('Failed to load profile');
       } finally {
@@ -53,10 +84,16 @@ const ProfileSettings = () => {
       setDisplayName(res.data.displayName || '');
       setBio(res.data.bio || '');
       setProfileImageUrl(res.data.profileImageUrl || '');
-      setThemePrimaryColor(res.data.themePrimaryColor || '');
-      setThemeAccentColor(res.data.themeAccentColor || '');
-      setThemeBackgroundColor(res.data.themeBackgroundColor || '');
-      setThemeTextColor(res.data.themeTextColor || '');
+      const primary = res.data.themePrimaryColor || '';
+      const accent = res.data.themeAccentColor || '';
+      const background = res.data.themeBackgroundColor || '';
+      const text = res.data.themeTextColor || '';
+      setThemePrimaryColor(primary);
+      setThemeAccentColor(accent);
+      setThemeBackgroundColor(background);
+      setThemeTextColor(text);
+      const matchedPreset = presets.find((p) => p.primary === primary && p.accent === accent && p.background === background && p.text === text);
+      setThemePreset(matchedPreset ? matchedPreset.id : 'custom');
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to save');
     } finally {
@@ -138,13 +175,30 @@ const ProfileSettings = () => {
               minRows={3}
             />
             <Typography variant="subtitle1">Theme</Typography>
+            <ToggleButtonGroup
+              exclusive
+              value={themePreset}
+              onChange={(event, value) => {
+                if (value) {
+                  applyPreset(value);
+                }
+              }}
+              aria-label="Theme presets"
+              sx={{ flexWrap: 'wrap', gap: 1 }}
+            >
+              {presets.map((preset) => (
+                <ToggleButton key={preset.id} value={preset.id} aria-label={preset.label} sx={{ textTransform: 'none', flexGrow: 1, minWidth: 120 }}>
+                  {preset.label}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Primary Color" value={themePrimaryColor} onChange={(e) => setThemePrimaryColor(e.target.value)} placeholder="#1976d2" fullWidth />
-              <TextField label="Accent Color" value={themeAccentColor} onChange={(e) => setThemeAccentColor(e.target.value)} placeholder="#ff4081" fullWidth />
+              <TextField label="Primary Color" value={themePrimaryColor} onChange={handleColorChange(setThemePrimaryColor)} placeholder="#1976d2" fullWidth />
+              <TextField label="Accent Color" value={themeAccentColor} onChange={handleColorChange(setThemeAccentColor)} placeholder="#ff4081" fullWidth />
             </Stack>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField label="Background Color" value={themeBackgroundColor} onChange={(e) => setThemeBackgroundColor(e.target.value)} placeholder="#ffffff" fullWidth />
-              <TextField label="Text Color" value={themeTextColor} onChange={(e) => setThemeTextColor(e.target.value)} placeholder="#111827" fullWidth />
+              <TextField label="Background Color" value={themeBackgroundColor} onChange={handleColorChange(setThemeBackgroundColor)} placeholder="#ffffff" fullWidth />
+              <TextField label="Text Color" value={themeTextColor} onChange={handleColorChange(setThemeTextColor)} placeholder="#111827" fullWidth />
             </Stack>
             <Box sx={{ mt: 1 }}>
               <Typography variant="caption" color="text.secondary">Live preview</Typography>
