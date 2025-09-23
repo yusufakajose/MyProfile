@@ -36,6 +36,32 @@ const ProfileHeaderSkeleton = () => (
   </Box>
 );
 
+const ErrorState = ({ message, onRetry }) => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh" px={2}>
+    <Card sx={{ maxWidth: 520, width: '100%' }}>
+      <CardContent>
+        <Alert severity="error" sx={{ mb: 2 }}>{message || 'Something went wrong'}</Alert>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="flex-end">
+          <Button variant="outlined" onClick={onRetry}>Retry</Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  </Box>
+);
+
+const EmptyState = () => (
+  <Box maxWidth={720} mx="auto" px={2} mt={2} mb={4}>
+    <Card elevation={0} sx={{ borderRadius: 2, border: '1px dashed', borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>No links yet</Typography>
+        <Typography variant="body2" color="text.secondary">
+          This profile hasn’t added any links. Check back soon!
+        </Typography>
+      </CardContent>
+    </Card>
+  </Box>
+);
+
 const Favicon = ({ url, size = 20 }) => {
   const host = useMemo(() => {
     try { return new URL(url).hostname; } catch { return ''; }
@@ -181,11 +207,7 @@ const PublicProfile = () => {
   }
 
   if (error || !profile) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
-        <Alert severity="error">{error || 'Something went wrong'}</Alert>
-      </Box>
-    );
+    return <ErrorState message={error || 'Something went wrong'} onRetry={fetchProfile} />;
   }
 
   const primary = profile.themePrimaryColor || '#1976d2';
@@ -251,49 +273,53 @@ const PublicProfile = () => {
       </Menu>
 
       {/* Links */}
-      <Box maxWidth={720} mx="auto" px={2} mt={2}>
-        <Grid container spacing={2}>
-          {(profile.links || []).sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)).map((link) => (
-            <Grid key={link.id} item xs={12}>
-              <Card elevation={3} sx={{ borderRadius: 16, backgroundColor: '#fff', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)', transition: 'transform 120ms ease, box-shadow 120ms ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(2,6,23,0.07), 0 4px 12px rgba(2,6,23,0.06)' }, '&:active': { transform: 'translateY(0)', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)' } }}>
-                <CardActionArea onClick={() => handleLinkClick(link)} sx={{ borderRadius: 2 }}>
-                  <CardContent>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
-                      <Box sx={{ minWidth: 0 }}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Favicon url={link.url} size={20} />
-                          <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
+      {(profile.links?.length || 0) === 0 ? (
+        <EmptyState />
+      ) : (
+        <Box maxWidth={720} mx="auto" px={2} mt={2}>
+          <Grid container spacing={2}>
+            {(profile.links || []).sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)).map((link) => (
+              <Grid key={link.id} item xs={12}>
+                <Card elevation={3} sx={{ borderRadius: 16, backgroundColor: '#fff', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)', transition: 'transform 120ms ease, box-shadow 120ms ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(2,6,23,0.07), 0 4px 12px rgba(2,6,23,0.06)' }, '&:active': { transform: 'translateY(0)', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)' } }}>
+                  <CardActionArea onClick={() => handleLinkClick(link)} sx={{ borderRadius: 2 }}>
+                    <CardContent>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Favicon url={link.url} size={20} />
+                            <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
+                          </Box>
+                          {link.description && (
+                            <Typography variant="body2" color="text.secondary">
+                              {link.description}
+                            </Typography>
+                          )}
+                          <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                            <LinkIcon fontSize="small" sx={{ color: accent }} />
+                            <Typography variant="caption" sx={{ color: accent, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                              {link.url}
+                            </Typography>
+                          </Box>
                         </Box>
-                        {link.description && (
-                          <Typography variant="body2" color="text.secondary">
-                            {link.description}
-                          </Typography>
-                        )}
-                        <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                          <LinkIcon fontSize="small" sx={{ color: accent }} />
-                          <Typography variant="caption" sx={{ color: accent, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                            {link.url}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Stack direction="row" spacing={1} sx={{ mt: { xs: 1, sm: 0 }, alignSelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
-                        <Tooltip title="Share link">
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); openLinkShareMenu(e, link); }}>
-                            <ShareIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary, flexGrow: { xs: 1, sm: 0 } }}>
-                          Open
-                        </Button>
+                        <Stack direction="row" spacing={1} sx={{ mt: { xs: 1, sm: 0 }, alignSelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
+                          <Tooltip title="Share link">
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openLinkShareMenu(e, link); }}>
+                              <ShareIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary, flexGrow: { xs: 1, sm: 0 } }}>
+                            Open
+                          </Button>
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       {/* Per-link share menu */}
       <Menu
