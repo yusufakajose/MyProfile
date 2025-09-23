@@ -42,7 +42,7 @@ logging:
 ratelimit:
   qr:
     windowSeconds: 60
-    maxRequests: 1000
+    maxRequests: 60
 
 # JWT configuration for tests
 jwt:

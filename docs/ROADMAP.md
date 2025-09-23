@@ -110,7 +110,7 @@
    - [x] Gate HSTS to HTTPS only in Nginx
 4) Tests (incremental)
    - [ ] Worker upsert happy-path with Testcontainers
-   - [ ] Analytics endpoints 200/401/403 integration tests
+   - [x] Analytics endpoints + QR headers integration tests stable in CI
 5) CI bootstrap
    - [ ] GitHub Actions: backend build + tests; frontend build; artifact upload
    - [ ] Lint to ensure reports and build artifacts aren’t committed
