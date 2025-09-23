@@ -21,6 +21,7 @@ import { AuthProvider } from './context/AuthContext';
 function App() {
   const location = useLocation();
   const isPublicRoute = location.pathname.startsWith('/u/');
+  const appBackground = isPublicRoute ? 'transparent' : 'background.default';
   useEffect(() => {
     const path = location.pathname;
     let title = 'LinkGrove';
@@ -42,7 +43,7 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: appBackground }}>
       <AuthProvider>
         {!isPublicRoute && <Header />}
         {/* Sticky AppBar doesn't need extra Toolbar spacer or Divider */}

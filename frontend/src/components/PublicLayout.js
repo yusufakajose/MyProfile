@@ -5,7 +5,7 @@ const PublicLayout = ({ children }) => {
   return (
     <>
       <a href="#main" className="skip-link">Skip to content</a>
-      <Box component="main" id="main">
+      <Box component="main" id="main" sx={{ minHeight: '100vh' }}>
         {children}
       </Box>
     </>
