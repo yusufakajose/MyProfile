@@ -109,6 +109,7 @@ Notable endpoints:
 ## CI/CD
 
 - GitHub Actions workflow at `.github/workflows/ci.yml`
+- Status badge: [![CI](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml)
 - Pinned container images across Dockerfiles/Compose/Testcontainers for reproducible builds
 
 ## Troubleshooting

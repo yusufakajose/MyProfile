@@ -78,7 +78,7 @@
 
 ## DevEx / CI/CD
 - [x] Git initialized; `.gitignore` excludes build artifacts/env/IDE
-- [ ] CI (build → test → package Docker images for backend/frontend)
+- [x] CI (build → test → package Docker images for backend/frontend)
 - [ ] Docs: Update root README CI badge URL (replace OWNER/REPO after pushing to GitHub)
 - [x] Docker: serve frontend via Nginx; CSP nonce injection; API proxied to backend
   - [ ] Pass API URL via env consistently (`REACT_APP_API_URL`) and verify CORS for non-proxy setups
@@ -107,15 +107,15 @@
    - [x] Use minimal layout for public profile routes (header hidden already; extract layout)
    - [x] Sweep for any remaining absolute URLs; default to relative `/api` in dev
 3) Observability basics
-   - [ ] Add distributed tracing to Jaeger; document endpoints and correlation via `X-Request-Id`
+   - [x] Add distributed tracing to Jaeger; document endpoints and correlation via `X-Request-Id`
    - [x] Propagate `X-Request-Id` from Nginx to backend for end-to-end correlation
    - [x] Gate HSTS to HTTPS only in Nginx
 4) Tests (incremental)
    - [x] Worker upsert happy-path with Testcontainers
    - [x] Analytics endpoints + QR headers integration tests stable in CI
 5) CI bootstrap
-   - [ ] GitHub Actions: backend build + tests; frontend build; artifact upload
-   - [ ] Lint to ensure reports and build artifacts aren’t committed
+   - [x] GitHub Actions: backend build + tests; frontend build; artifact upload
+   - [x] Lint to ensure reports and build artifacts aren’t committed
 6) Geo analytics (starter)
    - [ ] Enable via env + mount; add basic e2e
    - [x] Expose `/api/admin/metrics/geo` (reports GeoIP enabled flag)
@@ -124,7 +124,7 @@
 
 ## Docs
 - [x] Capture OTLP tracing setup, local Jaeger instructions, and MDC correlation details (`docs/OTLP_TRACING.md`)
-- [ ] Update backend README with tracing quickstart snippet (link to `docs/OTLP_TRACING.md`)
+- [x] Update backend README with tracing quickstart snippet (link to `docs/OTLP_TRACING.md`)
 
 ## Tickets / Backlog
 - [ ] Draft geo analytics enablement ticket (env wiring, e2e coverage, ops runbook)

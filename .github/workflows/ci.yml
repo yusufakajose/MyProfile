@@ -7,8 +7,38 @@ on:
     branches: [ main ]
 
 jobs:
+  lint:
+    name: Repo lint (no generated artifacts)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure generated outputs are not tracked
+        run: |
+          set -euo pipefail
+          patterns=(
+            'backend/target/*'
+            'frontend/build/*'
+            'e2e/playwright-report/*'
+            '*.log'
+          )
+          found=()
+          for pattern in "${patterns[@]}"; do
+            if git ls-files -- "$pattern" | grep -q '.'; then
+              found+=("$pattern")
+            fi
+          done
+          if [ ${#found[@]} -ne 0 ]; then
+            echo "The following generated artifacts are currently tracked by git:"
+            printf '  %s\n' "${found[@]}"
+            echo 'Please remove them from source control before pushing.'
+            exit 1
+          fi
+
   backend:
     name: Backend (Maven + Testcontainers)
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -41,6 +71,7 @@ jobs:
 
   frontend:
     name: Frontend (Node build)
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
