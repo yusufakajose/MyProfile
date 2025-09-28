@@ -8,6 +8,7 @@ import io.micrometer.tracing.otel.bridge.OtelPropagator;
 import io.micrometer.tracing.otel.bridge.OtelTracer;
 import io.micrometer.tracing.propagation.Propagator;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
@@ -20,7 +21,6 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
-import io.opentelemetry.semconv.ResourceAttributes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import io.opentelemetry.semconv.ServiceAttributes;
 
 @Configuration
 @ConditionalOnProperty(prefix = "management.tracing", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -56,8 +57,8 @@ public class TracingConfig {
     @Bean
     public Resource otelResource() {
         Attributes attributes = Attributes.builder()
-                .put(ResourceAttributes.SERVICE_NAME, applicationName)
-                .put(ResourceAttributes.SERVICE_INSTANCE_ID, UUID.randomUUID().toString())
+                .put(ServiceAttributes.SERVICE_NAME, applicationName)
+                .put(AttributeKey.stringKey("service.instance.id"), UUID.randomUUID().toString())
                 .build();
         return Resource.getDefault().merge(Resource.create(attributes));
     }
