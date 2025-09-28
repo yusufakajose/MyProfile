@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import io.micrometer.tracing.Tracer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -33,6 +34,9 @@ class SessionControllerSecurityTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.linkgrove.api.config.JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    Tracer tracer;
 
     @Test
     @WithMockUser(roles = {"USER"})

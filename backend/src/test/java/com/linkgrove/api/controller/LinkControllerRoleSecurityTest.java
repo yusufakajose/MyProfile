@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.linkgrove.api.service.LinkService;
 import com.linkgrove.api.service.LinkVariantService;
+import io.micrometer.tracing.Tracer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +37,9 @@ class LinkControllerRoleSecurityTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.linkgrove.api.config.RateLimitingConfig rateLimitingConfig;
+
+    @MockitoBean
+    Tracer tracer;
 
     @Test
     @WithAnonymousUser

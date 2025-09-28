@@ -7,6 +7,7 @@ import com.linkgrove.api.dto.CreateLinkRequest;
 import com.linkgrove.api.exception.GlobalExceptionHandler;
 import com.linkgrove.api.service.LinkService;
 import com.linkgrove.api.service.LinkVariantService;
+import io.micrometer.tracing.Tracer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -44,6 +45,9 @@ class LinkControllerSecurityBoundaryTest {
     // Mock rate limiter to avoid requiring Redis in slice
     @MockitoBean
     RateLimitingConfig rateLimitingConfig;
+
+    @MockitoBean
+    Tracer tracer;
 
     @Test
     @WithAnonymousUser

@@ -8,6 +8,7 @@ import com.linkgrove.api.service.LinkService;
 import com.linkgrove.api.service.LinkVariantService;
 import com.linkgrove.api.config.JwtAuthenticationFilter;
 import com.linkgrove.api.config.RateLimitingConfig;
+import io.micrometer.tracing.Tracer;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -51,6 +52,9 @@ class LinkControllerWebMvcHappyPathTest {
 
     @MockitoBean
     StringRedisTemplate stringRedisTemplate;
+
+    @MockitoBean
+    Tracer tracer;
 
     @Test
     void createLink_happyPath_returns201AndBody() throws Exception {

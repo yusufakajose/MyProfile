@@ -22,7 +22,7 @@
 - [x] A/B tests & weighted rotation for links (link variants with weights)
 - [ ] Custom domains (starter version: domain mapping + host-based routing)
 - [x] Observability: structured JSON logs + request IDs; health/metrics (Actuator + Prometheus)
-  - [ ] Add distributed trace IDs (OTLP to Jaeger) and document
+  - [x] Add distributed trace IDs (OTLP to Jaeger) and document
 - [ ] Testability: Testcontainers integration tests (Postgres+Redis+RabbitMQ), contract tests, smoke tests
 - [ ] Admin UX APIs: webhook failures view, queues, rate-limit overviews beyond raw counters
 

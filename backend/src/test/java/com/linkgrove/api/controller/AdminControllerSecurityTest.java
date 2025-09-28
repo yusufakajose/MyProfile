@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import io.micrometer.tracing.Tracer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +36,9 @@ class AdminControllerSecurityTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.linkgrove.api.service.GeoIpService geoIpService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    Tracer tracer;
 
     @Test
     @WithAnonymousUser

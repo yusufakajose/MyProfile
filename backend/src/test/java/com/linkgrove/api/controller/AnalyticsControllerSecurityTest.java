@@ -1,5 +1,6 @@
 package com.linkgrove.api.controller;
 
+import io.micrometer.tracing.Tracer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,6 +30,9 @@ class AnalyticsControllerSecurityTest {
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     com.linkgrove.api.config.JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    Tracer tracer;
 
     @Test
     @WithAnonymousUser

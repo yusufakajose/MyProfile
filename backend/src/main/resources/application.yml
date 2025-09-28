@@ -61,7 +61,6 @@ management:
     otlp:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
       timeout: ${OTEL_EXPORTER_OTLP_TIMEOUT:10s}
-management:
 springdoc:
   api-docs:
     path: /v3/api-docs

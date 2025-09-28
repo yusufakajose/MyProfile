@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
@@ -25,6 +26,8 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
     public static final String MDC_STATUS = "httpStatus";
     public static final String MDC_CLIENT_IP = "clientIp";
     public static final String MDC_USERNAME = "username";
+    public static final String MDC_TRACE_ID = "traceId";
+    public static final String MDC_SPAN_ID = "spanId";
 
     private final Tracer tracer;
 
@@ -46,7 +49,14 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
         if (clientIp != null) {
             MDC.put(MDC_CLIENT_IP, clientIp);
         }
-        try {
+
+        Span currentSpan = tracer != null ? tracer.currentSpan() : null;
+        if (currentSpan != null && !currentSpan.isNoop()) {
+            MDC.put(MDC_TRACE_ID, currentSpan.context().traceId());
+            MDC.put(MDC_SPAN_ID, currentSpan.context().spanId());
+        }
+
+        try (Tracer.SpanInScope ignored = currentSpan != null ? tracer.withSpan(currentSpan) : null) {
             filterChain.doFilter(request, response);
         } finally {
             MDC.put(MDC_STATUS, String.valueOf(response.getStatus()));
@@ -56,6 +66,8 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
             }
             // Do not remove here to allow appenders to read; remove at request end
             MDC.remove(MDC_QUERY);
+            MDC.remove(MDC_TRACE_ID);
+            MDC.remove(MDC_SPAN_ID);
             // Keep other fields for encoders reading after chain; they will be overwritten on next request
         }
     }
