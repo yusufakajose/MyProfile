@@ -84,3 +84,27 @@ function verifyWebhook(req, rawBody, secret) {
 ```
 
 
+---
+
+Tracing quickstart (OTLP → Jaeger)
+
+1. Run a local Jaeger all-in-one container (collector + UI):
+   ```bash
+   docker run --rm -it \
+     -e COLLECTOR_OTLP_ENABLED=true \
+     -p 16686:16686 \
+     -p 4317:4317 \
+     jaegertracing/all-in-one:1.60
+   ```
+2. Export the OTLP configuration before starting the backend:
+   ```bash
+   export MANAGEMENT_TRACING_SAMPLING_PROBABILITY=1.0
+   export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+   # optional: export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=local"
+   ```
+3. Launch the backend (`./mvnw spring-boot:run`). The application will emit traces to the collector.
+4. Open Jaeger UI at http://localhost:16686 and select service `linkgrove-api` to inspect traces.
+
+See `docs/OTLP_TRACING.md` for advanced configuration (timeouts, sampling, MDC correlation).
+
+
