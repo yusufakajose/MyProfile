@@ -88,7 +88,7 @@
 
 ## Testing
 - [ ] Integration tests: public profile fetch, click tracking, cache behavior, analytics endpoints (JWT + 401/403)
-- [ ] Worker tests with Testcontainers for daily upserts + unique visitor increments
+- [x] Worker tests with Testcontainers for daily upserts + unique visitor increments
 - [ ] Frontend tests for Link Manager, Analytics Dashboard, Webhook Settings
 - [ ] Rate limiter tests; Flyway migration tests; QR low-threshold 429 test
 
@@ -111,7 +111,7 @@
    - [x] Propagate `X-Request-Id` from Nginx to backend for end-to-end correlation
    - [x] Gate HSTS to HTTPS only in Nginx
 4) Tests (incremental)
-   - [ ] Worker upsert happy-path with Testcontainers
+   - [x] Worker upsert happy-path with Testcontainers
    - [x] Analytics endpoints + QR headers integration tests stable in CI
 5) CI bootstrap
    - [ ] GitHub Actions: backend build + tests; frontend build; artifact upload
@@ -121,6 +121,13 @@
    - [x] Expose `/api/admin/metrics/geo` (reports GeoIP enabled flag)
 
 ---
+
+## Docs
+- [x] Capture OTLP tracing setup, local Jaeger instructions, and MDC correlation details (`docs/OTLP_TRACING.md`)
+- [ ] Update backend README with tracing quickstart snippet (link to `docs/OTLP_TRACING.md`)
+
+## Tickets / Backlog
+- [ ] Draft geo analytics enablement ticket (env wiring, e2e coverage, ops runbook)
 
 ## TODO: Geo analytics follow-ups (local dev + ops)
 - [ ] Local enablement and docs
