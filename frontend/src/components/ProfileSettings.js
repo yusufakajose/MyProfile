@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Card, CardContent, TextField, Button, Typography, Alert, Stack, Avatar, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
@@ -19,14 +19,14 @@ const ProfileSettings = () => {
   const [themeTextColor, setThemeTextColor] = useState('');
   const [themePreset, setThemePreset] = useState('custom');
 
-  const presets = [
+  const presets = useMemo(() => ([
     { id: 'custom', label: 'Custom', primary: '', accent: '', background: '', text: '' },
     { id: 'light', label: 'Light', primary: '#1976d2', accent: '#1f2937', background: '#ffffff', text: '#111827' },
     { id: 'dark', label: 'Dark', primary: '#90caf9', accent: '#f28b82', background: '#0f172a', text: '#e2e8f0' },
     { id: 'ocean', label: 'Ocean', primary: '#0ea5e9', accent: '#22d3ee', background: '#082f49', text: '#f1f5f9' },
     { id: 'sunset', label: 'Sunset', primary: '#f97316', accent: '#facc15', background: '#1f2937', text: '#f8fafc' },
     { id: 'forest', label: 'Forest', primary: '#16a34a', accent: '#a3e635', background: '#0b3d2e', text: '#f1f5f9' }
-  ];
+  ]), []);
 
   const applyPreset = (presetId) => {
     const preset = presets.find((p) => p.id === presetId) || presets[0];
@@ -71,7 +71,7 @@ const ProfileSettings = () => {
       }
     };
     load();
-  }, [authUser?.username]);
+  }, [authUser?.username, presets]);
 
   const save = async (e) => {
     e.preventDefault();
