@@ -29,6 +29,8 @@
     </encoder>
   </appender>
 
+  <logger name="org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport" level="WARN" />
+
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
