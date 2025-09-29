@@ -13,7 +13,13 @@ This guide expands on the README with practical steps for running LinkGrove loca
 
 ### 2.1 Docker Compose (`infra/docker/.env`)
 
-The helper scripts `infra/docker/start.sh` and `stop.sh` read variables from `infra/docker/.env`. Copy the template below to get started:
+The helper scripts read from `infra/docker/.env`. A sample is provided as `infra/docker/.env.example`; copy it to `.env` and adjust as needed:
+
+```bash
+cp infra/docker/.env.example infra/docker/.env
+```
+
+Key entries:
 
 ```env
 # Database
@@ -34,7 +40,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:3001
 JWT_SECRET=change-me-please-for-local-testing
 ```
 
-> Tip: Secrets set in this file are exported into the container environment when you run `bash infra/docker/start.sh`.
+> Tip: Anything set here is exported into the containers when you run `bash infra/docker/start.sh`.
 
 ### 2.2 Backend (`backend/.env`)
 

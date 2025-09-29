@@ -31,6 +31,15 @@ Additional knobs are exposed in `TracingConfig` via `OTLPExporterProperties`—r
 3. Ensure the backend runs with the tracing profile (default settings already point to `localhost:4317`).
 4. Visit Jaeger UI at `http://localhost:16686`. Search for service `linkgrove-api` to view traces.
 
+### Sanity check
+
+Once the backend is running with tracing enabled, hit a simple endpoint and confirm a span appears:
+
+```bash
+curl -s http://localhost:8080/api/auth/health
+# then, in Jaeger UI, search for service = linkgrove-api and operation = GET /api/auth/health
+```
+
 ### Manual Collector Startup
 
 If you prefer using Docker directly:
