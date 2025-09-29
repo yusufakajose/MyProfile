@@ -111,7 +111,19 @@ Notable endpoints:
 
 - GitHub Actions workflow at `.github/workflows/ci.yml`
 - Status badge: [![CI](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yusufakajose/MyProfile/actions/workflows/ci.yml)
+- Developer setup badge: [![Dev Setup](https://img.shields.io/badge/docs-dev%20setup-blue)](docs/DEV_SETUP.md)
 - Pinned container images across Dockerfiles/Compose/Testcontainers for reproducible builds
+
+### Pipeline overview
+
+The `CI` workflow runs the following jobs in order:
+
+1. `lint` — verifies no generated artifacts (`backend/target`, `frontend/build`, `*.log`) are checked in.
+2. `backend` — Maven verify (unit + integration) with Testcontainers; uploads the Spring Boot jar artifact.
+3. `frontend` — Node build; uploads the compiled React bundle.
+4. `e2e` — Playwright tests using the artifacts above, plus backend/frontend logs and reports on failure.
+
+Reference the detailed setup and commands in [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md#5-testing-cheat-sheet).
 
 ## Troubleshooting
 
