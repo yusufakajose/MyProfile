@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Duration;
 import java.util.List;
@@ -123,6 +124,7 @@ public class TracingConfig {
     }
 
     @Bean
+    @Primary
     public Propagator micrometerPropagator(ContextPropagators contextPropagators,
                                            io.opentelemetry.api.trace.Tracer otelTracer) {
         return new OtelPropagator(contextPropagators, otelTracer);
