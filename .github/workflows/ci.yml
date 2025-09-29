@@ -23,16 +23,23 @@ jobs:
             'e2e/playwright-report/*'
             '*.log'
           )
-          found=()
+          offenders=()
+          details=()
           for pattern in "${patterns[@]}"; do
-            if git ls-files -- "$pattern" | grep -q '.'; then
-              found+=("$pattern")
+            matches=$(git ls-files -z -- "$pattern" 2>/dev/null || true)
+            if [ -n "$matches" ]; then
+              offenders+=("$pattern")
+              while IFS= read -r -d '' file; do
+                details+=("$file")
+              done <<<"$matches"
             fi
           done
-          if [ ${#found[@]} -ne 0 ]; then
-            echo "The following generated artifacts are currently tracked by git:"
-            printf '  %s\n' "${found[@]}"
-            echo 'Please remove them from source control before pushing.'
+          if [ ${#offenders[@]} -ne 0 ]; then
+            echo "Generated artifacts must not be committed. Patterns flagged:"
+            printf '  %s\n' "${offenders[@]}"
+            echo
+            echo "Tracked files:"
+            printf '  %s\n' "${details[@]}"
             exit 1
           fi
 
