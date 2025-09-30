@@ -68,6 +68,7 @@
 - [ ] Hardened input validation across controllers (`@Valid` + constraints)
   - [x] Dev endpoints hardening: default dev token endpoints OFF; conditional permit based on env
   - [ ] QR logo host allowlist
+- [x] Password encoder properly injected as Spring bean (removed duplicate BCryptPasswordEncoder instances)
 
 ## Webhooks
 - [x] `link.click` event dispatch with signed HMAC
