@@ -15,6 +15,7 @@ frontend.log
 # Env
 .env
 .env.*
+!.env.example
 
 # Node / React
 frontend/node_modules/

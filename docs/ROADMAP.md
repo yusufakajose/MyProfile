@@ -82,9 +82,11 @@
 - [ ] Docs: Update root README CI badge URL (replace OWNER/REPO after pushing to GitHub)
 - [x] Docker: serve frontend via Nginx; CSP nonce injection; API proxied to backend
   - [ ] Pass API URL via env consistently (`REACT_APP_API_URL`) and verify CORS for non-proxy setups
-- [ ] Developer docs: local `.env` setup; `start.sh` reads env; troubleshooting
-  - [ ] Add GeoIP setup docs (`GEOIP_ENABLED`, `GEOIP_DB_PATH`) and compose volume mount
-  - [ ] Default `ENABLE_DEV_TOKEN_ENDPOINTS` to false in compose
+- [x] Developer docs: local `.env` setup; `start.sh` reads env; troubleshooting (`docs/DEV_SETUP.md`)
+  - [x] Add GeoIP setup docs (`GEOIP_ENABLED`, `GEOIP_DB_PATH`) and compose volume mount
+  - [x] Default `ENABLE_DEV_TOKEN_ENDPOINTS` to false in compose
+  - [x] Provide `.env.example` for Docker Compose quickstart (`infra/docker/.env.example`)
+  - [x] Create comprehensive API documentation (`docs/API.md`)
 
 ## Testing
 - [ ] Integration tests: public profile fetch, click tracking, cache behavior, analytics endpoints (JWT + 401/403)

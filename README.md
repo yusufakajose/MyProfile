@@ -25,13 +25,19 @@ LinkGrove is a full‑stack link profiles and analytics platform. Create a publi
 
 Prereqs: Docker + Compose plugin. For full environment templates and advanced options, see [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md).
 
-1. Copy `infra/docker/.env.example` (or create your own `.env`) with database credentials, JWT secret, and URLs.
+1. Copy the example environment file:
+   ```bash
+   cp infra/docker/.env.example infra/docker/.env
+   ```
+   Edit `.env` as needed (defaults work for local dev; **change `JWT_SECRET` in production**).
+
 2. Start the stack:
    ```bash
    bash infra/docker/start.sh
    ```
    - App: http://localhost:3001
    - API (proxied): http://localhost:3001/api
+
 3. Stop and clean up:
    ```bash
    bash infra/docker/stop.sh
@@ -93,6 +99,8 @@ CI=true npm run build
 See [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md#5-testing-cheat-sheet) for a consolidated matrix of backend/Frontend/E2E commands and troubleshooting tips.
 
 ## API
+
+See [`docs/API.md`](docs/API.md) for complete endpoint reference, request/response examples, webhook verification, and error handling.
 
 Notable endpoints:
 
