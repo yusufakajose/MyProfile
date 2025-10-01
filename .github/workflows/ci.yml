@@ -189,6 +189,18 @@ jobs:
         working-directory: e2e
         run: npm ci --prefer-offline --no-audit
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps
+
       - name: Start backend
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/linkgrove
@@ -253,7 +265,7 @@ jobs:
           E2E_BASE_URL: http://localhost:3001
           E2E_BACKEND_URL: http://localhost:8080
           CHECK_FRONTEND_HEADERS: "0"
-        run: npx playwright install --with-deps && npm test
+        run: npm test
 
       - name: Upload Playwright report
         if: always()

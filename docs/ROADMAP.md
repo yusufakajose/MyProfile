@@ -118,7 +118,8 @@
    - [x] Analytics endpoints + QR headers integration tests stable in CI
 5) CI bootstrap
    - [x] GitHub Actions: backend build + tests; frontend build; artifact upload
-   - [x] Lint to ensure reports and build artifacts aren’t committed
+   - [x] Lint to ensure reports and build artifacts aren't committed
+   - [x] Fix Playwright browser caching and installation order (prevents flaky test runs)
 6) Geo analytics (starter)
    - [ ] Enable via env + mount; add basic e2e
    - [x] Expose `/api/admin/metrics/geo` (reports GeoIP enabled flag)
