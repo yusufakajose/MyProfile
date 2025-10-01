@@ -11,6 +11,7 @@ import com.linkgrove.api.repository.RefreshTokenRepository;
 import com.linkgrove.api.repository.RoleRepository;
 import com.linkgrove.api.repository.UserRepository;
 import com.linkgrove.api.util.JwtUtil;
+import com.linkgrove.api.util.SecurityTokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final SecurityUxService securityUxService;
     private final PasswordEncoder passwordEncoder;
+    private final SecurityTokenUtil securityTokenUtil;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -102,7 +104,7 @@ public class AuthService {
         found.setRevoked(true);
         found.setLastUsedAt(java.time.LocalDateTime.now());
         refreshTokenRepository.save(found);
-        String newRaw = generateSecureToken();
+        String newRaw = securityTokenUtil.generateSecureToken();
         String newHash = sha256(newRaw);
         found.setReplacedBy(newHash);
 
@@ -124,7 +126,7 @@ public class AuthService {
     }
 
     private String generateAndStoreRefreshToken(User user) {
-        String raw = generateSecureToken();
+        String raw = securityTokenUtil.generateSecureToken();
         String hash = sha256(raw);
         RefreshToken rt = RefreshToken.builder()
                 .user(user)
@@ -142,14 +144,6 @@ public class AuthService {
         return raw;
     }
 
-    private String generateSecureToken() {
-        byte[] bytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(bytes);
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
-
     private String sha256(String data) {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
@@ -158,7 +152,7 @@ public class AuthService {
             for (byte b : d) sb.append(String.format("%02x", b));
             return sb.toString();
         } catch (Exception e) {
-            throw new RuntimeException("hash error");
+            throw new IllegalStateException("SHA-256 hashing failed", e);
         }
     }
 

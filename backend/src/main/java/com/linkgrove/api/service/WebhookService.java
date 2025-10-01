@@ -6,6 +6,7 @@ import com.linkgrove.api.model.WebhookDelivery;
 import com.linkgrove.api.repository.UserRepository;
 import com.linkgrove.api.repository.WebhookConfigRepository;
 import com.linkgrove.api.repository.WebhookDeliveryRepository;
+import com.linkgrove.api.util.SecurityTokenUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -20,7 +21,6 @@ import com.linkgrove.api.config.RequestIdFilter;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class WebhookService {
     private final UserRepository userRepository;
     private final StringRedisTemplate stringRedisTemplate;
     private final WebhookHttpClient webhookHttpClient;
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private final SecurityTokenUtil securityTokenUtil;
 
     @Value("${webhooks.maxRetriesPerDestinationPerDay:100}")
     private int maxRetriesPerDestinationPerDay;
@@ -68,7 +68,7 @@ public class WebhookService {
         }
 
         long ts = Instant.now().getEpochSecond();
-        String nonce = generateNonce(16);
+        String nonce = securityTokenUtil.generateSecureToken();
         String signatureBase = ts + "." + nonce + "." + json;
         String signature = hmacSha256(cfg.getSecret(), signatureBase);
         HttpHeaders headers = new HttpHeaders();
@@ -139,7 +139,7 @@ public class WebhookService {
         if (cfg == null) return d;
         String json = d.getPayload();
         long ts = Instant.now().getEpochSecond();
-        String nonce = generateNonce(16);
+        String nonce = securityTokenUtil.generateSecureToken();
         String signatureBase = ts + "." + nonce + "." + json;
         String signature = hmacSha256(cfg.getSecret(), signatureBase);
         HttpHeaders headers = new HttpHeaders();
@@ -205,16 +205,6 @@ public class WebhookService {
         }
     }
 
-    private String generateNonce(int numBytes) {
-        byte[] buf = new byte[Math.max(8, numBytes)];
-        SECURE_RANDOM.nextBytes(buf);
-        StringBuilder sb = new StringBuilder();
-        for (byte b : buf) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-
     private String generateIdempotencyKey(String username, String eventType, Long linkId, String payload) {
         try {
             String base = username + ":" + eventType + ":" + (linkId == null ? "" : linkId) + ":" + payload;
@@ -224,7 +214,7 @@ public class WebhookService {
             for (int i = 0; i < digest.length; i++) sb.append(String.format("%02x", digest[i]));
             return sb.substring(0, 64);
         } catch (Exception e) {
-            return generateNonce(16);
+            return securityTokenUtil.generateSecureToken();
         }
     }
 
@@ -236,7 +226,7 @@ public class WebhookService {
         long delay = baseSeconds * (1L << Math.min(5, Math.max(0, attempt - 1))); // cap shift at 5
         if (delay > 1800) delay = 1800; // cap 30m
         // add jitter +/- 20%
-        double jitter = 0.8 + (SECURE_RANDOM.nextDouble() * 0.4);
+        double jitter = 0.8 + (new java.security.SecureRandom().nextDouble() * 0.4);
         long jittered = Math.max(5, Math.round(delay * jitter));
         return LocalDateTime.now().plusSeconds(jittered);
     }

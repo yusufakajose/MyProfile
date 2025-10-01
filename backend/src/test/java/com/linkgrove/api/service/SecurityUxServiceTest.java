@@ -6,6 +6,7 @@ import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.EmailVerificationTokenRepository;
 import com.linkgrove.api.repository.PasswordResetTokenRepository;
 import com.linkgrove.api.repository.UserRepository;
+import com.linkgrove.api.util.SecurityTokenUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,7 @@ class SecurityUxServiceTest {
     PasswordResetTokenRepository resetRepo;
     EmailService emailService;
     PasswordEncoder passwordEncoder;
+    SecurityTokenUtil securityTokenUtil;
     SecurityUxService service;
 
     @BeforeEach
@@ -32,7 +34,8 @@ class SecurityUxServiceTest {
         resetRepo = mock(PasswordResetTokenRepository.class);
         emailService = mock(EmailService.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        service = new SecurityUxService(userRepository, emailRepo, resetRepo, emailService, passwordEncoder);
+        securityTokenUtil = mock(SecurityTokenUtil.class);
+        service = new SecurityUxService(userRepository, emailRepo, resetRepo, emailService, passwordEncoder, securityTokenUtil);
     }
 
     @Test

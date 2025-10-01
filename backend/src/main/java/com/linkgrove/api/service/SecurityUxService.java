@@ -2,6 +2,7 @@ package com.linkgrove.api.service;
 
 import com.linkgrove.api.model.*;
 import com.linkgrove.api.repository.*;
+import com.linkgrove.api.util.SecurityTokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,11 @@ public class SecurityUxService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final SecurityTokenUtil securityTokenUtil;
 
     @Transactional
     public void initiateEmailVerification(User user) {
-        String token = generateToken();
+        String token = securityTokenUtil.generateSecureToken();
         EmailVerificationToken evt = EmailVerificationToken.builder()
                 .user(user)
                 .token(token)
@@ -54,7 +56,7 @@ public class SecurityUxService {
     @Transactional
     public void initiatePasswordReset(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
-            String token = generateToken();
+            String token = securityTokenUtil.generateSecureToken();
             PasswordResetToken prt = PasswordResetToken.builder()
                     .user(user)
                     .token(token)
@@ -80,14 +82,4 @@ public class SecurityUxService {
             return true;
         }).orElse(false);
     }
-
-    private String generateToken() {
-        byte[] bytes = new byte[32];
-        new java.security.SecureRandom().nextBytes(bytes);
-        StringBuilder sb = new StringBuilder(bytes.length * 2);
-        for (byte b : bytes) sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
 }
-
-

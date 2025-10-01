@@ -69,6 +69,7 @@
   - [x] Dev endpoints hardening: default dev token endpoints OFF; conditional permit based on env
   - [ ] QR logo host allowlist
 - [x] Password encoder properly injected as Spring bean (removed duplicate BCryptPasswordEncoder instances)
+- [x] Token generation utility extracted to `SecurityTokenUtil` (DRY principle, centralized SecureRandom usage)
 
 ## Webhooks
 - [x] `link.click` event dispatch with signed HMAC
