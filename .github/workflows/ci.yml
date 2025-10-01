@@ -201,6 +201,18 @@ jobs:
         working-directory: e2e
         run: npx playwright install --with-deps
 
+      - name: Wait for RabbitMQ
+        run: |
+          echo "Waiting for RabbitMQ to be ready..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:15672/api/health/checks/alarms >/dev/null 2>&1; then
+              echo "RabbitMQ is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
       - name: Start backend
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/linkgrove
