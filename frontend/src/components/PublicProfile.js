@@ -216,34 +216,63 @@ const PublicProfile = () => {
   const text = profile.themeTextColor || '#111827';
 
   return (
-    <Box sx={{ backgroundColor: bg, color: text, minHeight: '100vh' }}>
-      {/* Compact header (banner removed) */}
-      <Box sx={{ textAlign: 'center', pt: 6, pb: 2, position: 'relative' }}>
-        <Avatar
-          src={profile.profileImageUrl || undefined}
-          alt={profile.displayName || profile.username}
-          sx={{
-            width: 104,
-            height: 104,
-            mb: 2,
-            display: 'block',
-            mx: 'auto',
-            boxShadow: '0 8px 24px rgba(2,6,23,0.18)'
-          }}
-        />
-        <Typography variant="h5" fontWeight={800} gutterBottom>
-          {profile.displayName || `@${profile.username}`}
-        </Typography>
-        {profile.bio && (
-          <Typography variant="body1" color="text.secondary">
-            {profile.bio}
+    <Box sx={{ backgroundColor: bg, color: text, minHeight: '100vh', position: 'relative' }}>
+      {/* Gradient background overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 320,
+          background: `linear-gradient(135deg, ${primary}15 0%, ${accent}15 100%)`,
+          zIndex: 0
+        }}
+      />
+      
+      {/* Content */}
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Compact header */}
+        <Box sx={{ textAlign: 'center', pt: 6, pb: 2 }}>
+          <Avatar
+            src={profile.profileImageUrl || undefined}
+            alt={profile.displayName || profile.username}
+            sx={{
+              width: 104,
+              height: 104,
+              mb: 2,
+              display: 'block',
+              mx: 'auto',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              border: '4px solid',
+              borderColor: 'background.paper'
+            }}
+          />
+          <Typography variant="h5" fontWeight={800} gutterBottom>
+            {profile.displayName || `@${profile.username}`}
           </Typography>
-        )}
-        <Chip label={`${profile.links?.length || 0} links`} size="small" sx={{ mt: 1 }} />
-        <Box sx={{ mt: 2 }}>
-          <Button variant="outlined" startIcon={<ShareIcon />} onClick={handleProfileShareClick}>
-            Share profile
-          </Button>
+          {profile.bio && (
+            <Typography variant="body1" color="text.secondary">
+              {profile.bio}
+            </Typography>
+          )}
+          <Chip label={`${profile.links?.length || 0} links`} size="small" sx={{ mt: 1 }} />
+          <Box sx={{ mt: 2 }}>
+            <Button 
+              variant="outlined" 
+              startIcon={<ShareIcon />} 
+              onClick={handleProfileShareClick}
+              sx={{
+                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 1)',
+                }
+              }}
+            >
+              Share profile
+            </Button>
+          </Box>
         </Box>
       </Box>
 
@@ -276,11 +305,29 @@ const PublicProfile = () => {
       {(profile.links?.length || 0) === 0 ? (
         <EmptyState />
       ) : (
-        <Box maxWidth={720} mx="auto" px={2} mt={2}>
+        <Box maxWidth={720} mx="auto" px={2} mt={2} pb={6} sx={{ position: 'relative', zIndex: 1 }}>
           <Grid container spacing={2}>
             {(profile.links || []).sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)).map((link) => (
               <Grid key={link.id} item xs={12}>
-                <Card elevation={3} sx={{ borderRadius: 16, backgroundColor: '#fff', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)', transition: 'transform 120ms ease, box-shadow 120ms ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(2,6,23,0.07), 0 4px 12px rgba(2,6,23,0.06)' }, '&:active': { transform: 'translateY(0)', boxShadow: '0 8px 18px rgba(2,6,23,0.05), 0 2px 6px rgba(2,6,23,0.04)' } }}>
+                <Card 
+                  elevation={3} 
+                  sx={{ 
+                    borderRadius: 16, 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 18px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04)', 
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                    '&:hover': { 
+                      transform: 'translateY(-4px) scale(1.01)', 
+                      boxShadow: `0 16px 32px rgba(0,0,0,0.12), 0 0 0 2px ${primary}40`,
+                      backgroundColor: 'rgba(255, 255, 255, 1)',
+                    }, 
+                    '&:active': { 
+                      transform: 'translateY(-2px) scale(1.005)', 
+                      boxShadow: '0 8px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)' 
+                    } 
+                  }}
+                >
                   <CardActionArea onClick={() => handleLinkClick(link)} sx={{ borderRadius: 2 }}>
                     <CardContent>
                       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
@@ -307,7 +354,18 @@ const PublicProfile = () => {
                               <ShareIcon />
                             </IconButton>
                           </Tooltip>
-                          <Button variant="contained" endIcon={<OpenInNewIcon />} sx={{ borderRadius: 999, backgroundColor: primary, flexGrow: { xs: 1, sm: 0 } }}>
+                          <Button 
+                            variant="contained" 
+                            endIcon={<OpenInNewIcon />} 
+                            sx={{ 
+                              borderRadius: 999, 
+                              background: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)`,
+                              flexGrow: { xs: 1, sm: 0 },
+                              '&:hover': {
+                                background: `linear-gradient(135deg, ${primary}dd 0%, ${accent}dd 100%)`,
+                              }
+                            }}
+                          >
                             Open
                           </Button>
                         </Stack>

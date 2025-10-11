@@ -14,8 +14,16 @@ import { ColorModeContext } from './theme/ColorModeContext';
 const getDesignTokens = (mode) => ({
   palette: {
     mode,
-    primary: { main: '#2563eb' },
-    secondary: { main: '#7c3aed' },
+    primary: { 
+      main: '#667eea',
+      light: '#8294ee',
+      dark: '#5568d3',
+    },
+    secondary: { 
+      main: '#764ba2',
+      light: '#8f6ab5',
+      dark: '#66428e',
+    },
     ...(mode === 'light'
       ? { background: { default: '#f7f8fb', paper: '#ffffff' }, text: { primary: '#0f172a', secondary: '#475569' } }
       : { background: { default: '#0b1220', paper: '#121a2a' }, text: { primary: '#e6e8ee', secondary: '#9aa4b2' } }),

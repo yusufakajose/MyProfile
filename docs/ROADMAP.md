@@ -55,6 +55,14 @@
 - [x] Better empty/error/skeleton states across analytics + public profile
   - [x] Public profile: retryable error state and empty state
   - [x] Analytics dashboard: retryable error state + empty state guidance
+- [x] UI/UX Design Enhancements
+  - [x] Landing page with hero section, features, and CTAs (replaces immediate login)
+  - [x] Custom brand colors (gradient: #667eea to #764ba2) and visual identity
+  - [x] Logo with gradient in Header component
+  - [x] Public profile glassmorphism effects: gradient background overlay, frosted glass cards with backdrop-filter
+  - [x] Enhanced link card animations: hover lift, scale, glow effects with cubic-bezier easing
+  - [x] Gradient buttons on public profiles
+  - [x] Updated meta tags (title, description, OG tags) for better SEO and social sharing
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

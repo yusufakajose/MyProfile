@@ -78,16 +78,41 @@ const Header = () => {
     >
       <Container maxWidth="xl">
       <Toolbar sx={{ py: 1.25, transition: 'box-shadow 120ms ease, border-color 120ms ease', boxShadow: { xs: 'none' } }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography
-            variant="h6"
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
             component={RouterLink}
             to="/"
-            sx={{ textDecoration: 'none', color: 'text.primary', fontWeight: 800, letterSpacing: 0.3 }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              gap: 1
+            }}
             aria-label="Go to dashboard"
           >
-            LinkGrove
-          </Typography>
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: 1.5,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontWeight: 900,
+                fontSize: '1.1rem'
+              }}
+            >
+              L
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{ color: 'text.primary', fontWeight: 800, letterSpacing: 0.3 }}
+            >
+              LinkGrove
+            </Typography>
+          </Box>
         </Box>
         <Stack direction="row" spacing={1.5} alignItems="center">
           {token ? (

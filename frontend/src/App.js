@@ -16,16 +16,19 @@ import SessionSettings from './components/SessionSettings';
 import VerifyEmailPage from './components/VerifyEmailPage';
 import ForgotPasswordPage from './components/ForgotPasswordPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
+import LandingPage from './components/LandingPage';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
   const location = useLocation();
   const isPublicRoute = location.pathname.startsWith('/u/');
+  const isLandingPage = location.pathname === '/';
   const appBackground = isPublicRoute ? 'transparent' : 'background.default';
   useEffect(() => {
     const path = location.pathname;
     let title = 'LinkGrove';
-    if (path === '/' || path.startsWith('/analytics')) title = 'Analytics · LinkGrove';
+    if (path === '/') title = 'LinkGrove - Your Links, Beautifully Organized';
+    else if (path.startsWith('/analytics')) title = 'Analytics · LinkGrove';
     else if (path.startsWith('/links')) title = 'Links · LinkGrove';
     else if (path.startsWith('/settings/profile')) title = 'Profile Settings · LinkGrove';
     else if (path.startsWith('/settings/webhooks')) title = 'Webhook Settings · LinkGrove';
@@ -33,7 +36,7 @@ function App() {
     else if (path.startsWith('/verify-email')) title = 'Verify Email · LinkGrove';
     else if (path.startsWith('/forgot-password')) title = 'Forgot Password · LinkGrove';
     else if (path.startsWith('/reset-password')) title = 'Reset Password · LinkGrove';
-    else if (path.startsWith('/member-login')) title = 'Login · LinkGrove';
+    else if (path.startsWith('/member-login') || path.startsWith('/login')) title = 'Login · LinkGrove';
     else if (path.startsWith('/register')) title = 'Register · LinkGrove';
     else if (path.startsWith('/u/')) title = 'Profile · LinkGrove';
     document.title = title;
@@ -45,19 +48,22 @@ function App() {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: appBackground }}>
       <AuthProvider>
-        {!isPublicRoute && <Header />}
+        {!isPublicRoute && !isLandingPage && <Header />}
         {/* Sticky AppBar doesn't need extra Toolbar spacer or Divider */}
-        {!isPublicRoute ? (
+        {isPublicRoute ? (
+          <PublicLayout>
+            <Routes>
+              <Route path="/u/:username" element={<PublicProfile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PublicLayout>
+        ) : isLandingPage ? (
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+          </Routes>
+        ) : (
           <Container id="main" maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
             <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AnalyticsDashboard />
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/analytics"
               element={
@@ -98,6 +104,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/login" element={<Login />} />
             <Route path="/member-login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -106,13 +113,6 @@ function App() {
             <Route path="*" element={<NotFound />} />
             </Routes>
           </Container>
-        ) : (
-          <PublicLayout>
-            <Routes>
-              <Route path="/u/:username" element={<PublicProfile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </PublicLayout>
         )}
       </AuthProvider>
     </Box>
