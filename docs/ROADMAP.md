@@ -89,6 +89,7 @@
   - [x] Default `ENABLE_DEV_TOKEN_ENDPOINTS` to false in compose
   - [x] Provide `.env.example` for Docker Compose quickstart (`infra/docker/.env.example`)
   - [x] Create comprehensive API documentation (`docs/API.md`)
+- [x] Fixed IDE import errors by rebuilding project (WebhookConfigRequest, UnauthorizedException, LinkClickEvent)
 
 ## Testing
 - [ ] Integration tests: public profile fetch, click tracking, cache behavior, analytics endpoints (JWT + 401/403)
