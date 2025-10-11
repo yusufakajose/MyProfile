@@ -40,7 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = jwtUtil.extractUsername(token);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    User user = userRepository.findByUsername(username).orElse(null);
+                    User user = userRepository.findWithRolesByUsername(username).orElse(null);
                     if (user != null && jwtUtil.validateToken(token, username)) {
                         Set<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                                 .map(Role::getName)

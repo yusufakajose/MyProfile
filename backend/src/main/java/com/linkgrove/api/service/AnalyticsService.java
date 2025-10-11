@@ -8,6 +8,8 @@ import com.linkgrove.api.dto.ReferrerStat;
 import com.linkgrove.api.dto.ReferrersResponse;
 import com.linkgrove.api.dto.SourceStat;
 import com.linkgrove.api.dto.SourcesResponse;
+import com.linkgrove.api.exception.LinkNotFoundException;
+import com.linkgrove.api.exception.UserNotFoundException;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.LinkClickDailyAggregateRepository;
@@ -48,7 +50,7 @@ public class AnalyticsService {
         log.info("Fetching analytics overview from database for user: {}", username);
         
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         List<Link> userLinks = linkRepository.findByUserOrderByDisplayOrderAsc(user);
         
@@ -77,7 +79,7 @@ public class AnalyticsService {
         log.info("Fetching detailed analytics from database for user: {}", username);
         
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         List<Link> userLinks = linkRepository.findByUserOrderByDisplayOrderAsc(user);
         
@@ -107,7 +109,7 @@ public class AnalyticsService {
         log.info("Fetching top performing links from database for user: {}", username);
         
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         List<Link> userLinks = linkRepository.findByUserOrderByDisplayOrderAsc(user);
         
@@ -139,7 +141,7 @@ public class AnalyticsService {
         log.info("Fetching dashboard summary from database for user: {}", username);
         
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         List<Link> userLinks = linkRepository.findByUserOrderByDisplayOrderAsc(user);
         
@@ -184,7 +186,7 @@ public class AnalyticsService {
         log.info("Fetching timeseries data for user: {} for last {} days", username, days);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -227,11 +229,11 @@ public class AnalyticsService {
         log.info("Fetching per-link timeseries for user: {}, linkId: {} for last {} days", username, linkId, days);
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         // Verify link belongs to user
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException("Link not found"));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -274,7 +276,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public ReferrersResponse getReferrerBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -300,7 +302,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public DevicesResponse getDeviceBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -326,7 +328,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public CountriesResponse getCountryBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -352,7 +354,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public SourcesResponse getSourceBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -378,9 +380,9 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public SourcesResponse getSourceBreakdownByLink(String username, Long linkId, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException("Link not found"));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -406,7 +408,7 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public Map<String, Object> getVariantBreakdown(String username, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));
@@ -446,9 +448,9 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public Map<String, Object> getVariantBreakdownByLink(String username, Long linkId, int days) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException("Link not found"));
 
         java.time.LocalDate end = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
         java.time.LocalDate start = end.minusDays(Math.max(0, days - 1));

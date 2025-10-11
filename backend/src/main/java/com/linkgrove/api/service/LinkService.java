@@ -1,6 +1,9 @@
 package com.linkgrove.api.service;
 
 import com.linkgrove.api.dto.*;
+import com.linkgrove.api.exception.AliasAlreadyExistsException;
+import com.linkgrove.api.exception.LinkNotFoundException;
+import com.linkgrove.api.exception.UserNotFoundException;
 import com.linkgrove.api.model.Link;
 import com.linkgrove.api.model.User;
 import com.linkgrove.api.repository.LinkRepository;
@@ -44,7 +47,7 @@ public class LinkService {
         log.info("Creating new link for user: {}", username);
         io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         Integer maxOrder = linkRepository.findMaxDisplayOrderForUser(user);
         int nextOrder = (maxOrder != null) ? maxOrder + 1 : 1;
@@ -64,7 +67,7 @@ public class LinkService {
         if (request.getAlias() != null && !request.getAlias().isBlank()) {
             String alias = normalizeAlias(request.getAlias());
             linkRepository.findByAlias(alias).ifPresent(existing -> {
-                throw new RuntimeException("Alias already in use");
+                throw new AliasAlreadyExistsException(alias);
             });
             link.setAlias(alias);
         }
@@ -85,7 +88,7 @@ public class LinkService {
     public List<LinkResponse> getUserLinks(String username) {
         log.info("Fetching user links from database for user: {}", username);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         return linkRepository.findByUserOrderByDisplayOrderAsc(user)
                 .stream()
@@ -96,7 +99,7 @@ public class LinkService {
     @Transactional(readOnly = true)
     public Page<LinkResponse> getUserLinksPage(String username, java.util.List<String> tagNames, Boolean active, Pageable pageable) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
         java.util.List<String> norm = normalize(tagNames);
         Page<Link> page = norm == null || norm.isEmpty()
                 ? linkRepository.findByUserNoTags(user, active, pageable)
@@ -107,7 +110,7 @@ public class LinkService {
     @Transactional(readOnly = true)
     public Page<LinkResponse> searchUserLinks(String username, String query, java.util.List<String> tagNames, Boolean active, Pageable pageable) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
         java.util.List<String> norm = normalize(tagNames);
         if (norm == null || norm.isEmpty()) {
             return linkRepository.searchUserLinksNoTags(user, query, active, pageable)
@@ -120,10 +123,10 @@ public class LinkService {
     @Transactional(readOnly = true)
     public LinkResponse getLinkById(String username, Long linkId) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException(linkId));
 
         return mapToLinkResponse(link);
     }
@@ -131,7 +134,7 @@ public class LinkService {
     @Transactional(readOnly = true)
     public java.util.List<String> listUserTagNames(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
         return linkRepository.findByUserOrderByDisplayOrderAsc(user).stream()
                 .flatMap(l -> l.getTags().stream())
                 .map(t -> t.getName())
@@ -152,10 +155,10 @@ public class LinkService {
         log.info("Updating link {} for user: {}", linkId, username);
         io.micrometer.core.instrument.Timer.Sample sample = io.micrometer.core.instrument.Timer.start(io.micrometer.core.instrument.Metrics.globalRegistry);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException(linkId));
 
         link.setTitle(sanitizeTitle(request.getTitle()));
         link.setUrl(sanitizeUrl(request.getUrl()));
@@ -177,7 +180,7 @@ public class LinkService {
             } else if (!trimmed.equals(link.getAlias())) {
                 Link existing = linkRepository.findByAlias(trimmed).orElse(null);
                 if (existing != null && !existing.getId().equals(link.getId())) {
-                    throw new RuntimeException("Alias already in use");
+                    throw new AliasAlreadyExistsException(trimmed);
                 }
                 link.setAlias(trimmed);
             }
@@ -201,10 +204,10 @@ public class LinkService {
         log.info("Deleting link {} for user: {}", linkId, username);
         io.micrometer.core.instrument.Metrics.counter("links.deleted").increment();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         Link link = linkRepository.findByIdAndUser(linkId, user)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException(linkId));
 
         linkRepository.delete(link);
     }
@@ -221,12 +224,12 @@ public class LinkService {
         log.info("Reordering links for user: {}", username);
         io.micrometer.core.instrument.Metrics.counter("links.reordered").increment();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         for (int i = 0; i < linkIds.size(); i++) {
             Long linkId = linkIds.get(i);
             Link link = linkRepository.findByIdAndUser(linkId, user)
-                    .orElseThrow(() -> new RuntimeException("Link not found: " + linkId));
+                    .orElseThrow(() -> new LinkNotFoundException(linkId));
             
             link.setDisplayOrder(i + 1);
             linkRepository.save(link);
@@ -238,7 +241,7 @@ public class LinkService {
     public PublicProfileResponse getPublicProfile(String username) {
         log.info("Fetching public profile from database for user: {}", username);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(username));
 
         List<Link> activeLinks = linkRepository.findActiveLinksForPublicProfile(username).stream()
                 .filter(this::isWithinSchedule)
@@ -282,7 +285,7 @@ public class LinkService {
         redisTemplate.opsForValue().set(idempotencyKey, "1", Duration.ofSeconds(5));
 
         Link link = linkRepository.findById(linkId)
-                .orElseThrow(() -> new RuntimeException("Link not found"));
+                .orElseThrow(() -> new LinkNotFoundException(linkId));
 
         link.setClickCount(link.getClickCount() + 1);
         linkRepository.save(link);

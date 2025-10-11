@@ -70,6 +70,10 @@
   - [ ] QR logo host allowlist
 - [x] Password encoder properly injected as Spring bean (removed duplicate BCryptPasswordEncoder instances)
 - [x] Token generation utility extracted to `SecurityTokenUtil` (DRY principle, centralized SecureRandom usage)
+- [x] Custom exception hierarchy with semantic HTTP status codes (UserNotFoundException, LinkNotFoundException, AliasAlreadyExistsException)
+- [x] Replaced generic RuntimeException with domain-specific exceptions across service layer
+- [x] Fixed N+1 query problem: Added @EntityGraph(attributePaths = {"tags"}) to LinkRepository methods to eagerly fetch tags
+- [x] Fixed User.roles EAGER fetch anti-pattern: Changed to LAZY with selective loading via findWithRolesByUsername() for auth operations
 
 ## Webhooks
 - [x] `link.click` event dispatch with signed HMAC

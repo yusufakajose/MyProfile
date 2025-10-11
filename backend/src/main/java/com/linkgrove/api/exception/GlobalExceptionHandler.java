@@ -115,6 +115,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle user not found exceptions
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFound(
+            UserNotFoundException ex, WebRequest request) {
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("User Not Found")
+                .message(ex.getMessage())
+                .path(getPath(request))
+                .build();
+
+        log.warn("User not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
      * Handle link not found exceptions
      */
     @ExceptionHandler(LinkNotFoundException.class)
@@ -131,6 +150,25 @@ public class GlobalExceptionHandler {
 
         log.warn("Link not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Handle alias already exists exceptions
+     */
+    @ExceptionHandler(AliasAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleAliasAlreadyExists(
+            AliasAlreadyExistsException ex, WebRequest request) {
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Alias Already Exists")
+                .message(ex.getMessage())
+                .path(getPath(request))
+                .build();
+
+        log.warn("Alias conflict: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     /**

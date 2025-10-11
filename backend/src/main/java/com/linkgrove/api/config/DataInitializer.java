@@ -27,7 +27,7 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = roleRepository.findByName("ADMIN").orElseGet(() -> roleRepository.save(Role.builder().name("ADMIN").build()));
 
         // Ensure admin user exists and has ADMIN + USER roles
-        User admin = userRepository.findByUsername("admin").orElseGet(() -> {
+        User admin = userRepository.findWithRolesByUsername("admin").orElseGet(() -> {
             User created = User.builder()
                     .username("admin")
                     .email("admin@example.com")
@@ -54,7 +54,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // Ensure demo user exists and has USER role
-        User demo = userRepository.findByUsername("demo").orElseGet(() -> {
+        User demo = userRepository.findWithRolesByUsername("demo").orElseGet(() -> {
             User created = User.builder()
                     .username("demo")
                     .email("demo@example.com")
