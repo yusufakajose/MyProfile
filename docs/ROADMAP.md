@@ -71,7 +71,9 @@
 
 ## Data & Migrations
 - [x] Boot-time index initialization (dev convenience)
-- [x] Re-enable Flyway with baseline for existing DB (baseline-version=0); add migrations through V15
+- [x] Re-enable Flyway with baseline for existing DB (baseline-version=0); add migrations through V17
+  - [x] V16: profile_view_count column in users table
+  - [x] V17: thumbnail_url column in links table
 - [ ] Validate indexes with EXPLAIN on key queries and lock in via migration
 
 ## Rate Limiting & Security
