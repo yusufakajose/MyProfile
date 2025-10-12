@@ -21,6 +21,8 @@ public class PublicProfileResponse {
     private String themeAccentColor;
     private String themeBackgroundColor;
     private String themeTextColor;
+    private Boolean emailVerified;
+    private Long viewCount;
     private List<PublicLinkResponse> links;
 
     @Data
@@ -32,6 +34,7 @@ public class PublicProfileResponse {
         private String title;
         private String url;
         private String description;
+        private String thumbnailUrl;
         private Integer displayOrder;
     }
 }

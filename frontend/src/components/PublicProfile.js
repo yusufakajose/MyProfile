@@ -26,6 +26,8 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import client from '../api/client';
 
 const ProfileHeaderSkeleton = () => (
@@ -248,15 +250,35 @@ const PublicProfile = () => {
               borderColor: 'background.paper'
             }}
           />
-          <Typography variant="h5" fontWeight={800} gutterBottom>
-            {profile.displayName || `@${profile.username}`}
-          </Typography>
+          <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
+            <Typography variant="h5" fontWeight={800}>
+              {profile.displayName || `@${profile.username}`}
+            </Typography>
+            {profile.emailVerified && (
+              <Tooltip title="Verified account">
+                <VerifiedIcon sx={{ color: primary, fontSize: 28 }} />
+              </Tooltip>
+            )}
+          </Box>
           {profile.bio && (
             <Typography variant="body1" color="text.secondary">
               {profile.bio}
             </Typography>
           )}
-          <Chip label={`${profile.links?.length || 0} links`} size="small" sx={{ mt: 1 }} />
+          <Stack direction="row" spacing={1} sx={{ mt: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Chip 
+              icon={<LinkIcon fontSize="small" />}
+              label={`${profile.links?.length || 0} links`} 
+              size="small" 
+            />
+            {profile.viewCount !== undefined && (
+              <Chip 
+                icon={<VisibilityIcon fontSize="small" />}
+                label={`${profile.viewCount} views`} 
+                size="small" 
+              />
+            )}
+          </Stack>
           <Box sx={{ mt: 2 }}>
             <Button 
               variant="outlined" 
@@ -331,23 +353,41 @@ const PublicProfile = () => {
                   <CardActionArea onClick={() => handleLinkClick(link)} sx={{ borderRadius: 2 }}>
                     <CardContent>
                       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Favicon url={link.url} size={20} />
-                            <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
-                          </Box>
-                          {link.description && (
-                            <Typography variant="body2" color="text.secondary">
-                              {link.description}
-                            </Typography>
+                        <Stack direction="row" spacing={2} sx={{ minWidth: 0, width: '100%' }}>
+                          {link.thumbnailUrl && (
+                            <Box
+                              component="img"
+                              src={link.thumbnailUrl}
+                              alt={link.title}
+                              sx={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: 2,
+                                objectFit: 'cover',
+                                flexShrink: 0,
+                                display: { xs: 'none', sm: 'block' }
+                              }}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
                           )}
-                          <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                            <LinkIcon fontSize="small" sx={{ color: accent }} />
-                            <Typography variant="caption" sx={{ color: accent, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
-                              {link.url}
-                            </Typography>
+                          <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Favicon url={link.url} size={20} />
+                              <Typography variant="h6" fontWeight={700} sx={{ color: primary }}>{link.title}</Typography>
+                            </Box>
+                            {link.description && (
+                              <Typography variant="body2" color="text.secondary">
+                                {link.description}
+                              </Typography>
+                            )}
+                            <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                              <LinkIcon fontSize="small" sx={{ color: accent }} />
+                              <Typography variant="caption" sx={{ color: accent, overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                                {link.url}
+                              </Typography>
+                            </Box>
                           </Box>
-                        </Box>
+                        </Stack>
                         <Stack direction="row" spacing={1} sx={{ mt: { xs: 1, sm: 0 }, alignSelf: { xs: 'stretch', sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
                           <Tooltip title="Share link">
                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); openLinkShareMenu(e, link); }}>

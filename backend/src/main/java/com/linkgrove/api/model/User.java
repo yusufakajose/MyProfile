@@ -69,5 +69,9 @@ public class User {
 
     @Column(name = "verified_at")
     private java.time.LocalDateTime verifiedAt;
+
+    @Column(name = "profile_view_count", nullable = false)
+    @Builder.Default
+    private Long profileViewCount = 0L;
 }
 

@@ -63,6 +63,10 @@
   - [x] Enhanced link card animations: hover lift, scale, glow effects with cubic-bezier easing
   - [x] Gradient buttons on public profiles
   - [x] Updated meta tags (title, description, OG tags) for better SEO and social sharing
+  - [x] Profile view counter (increments on each profile visit, displayed with eye icon)
+  - [x] Verified badge icon for email-verified users (blue checkmark next to username)
+  - [x] Link preview thumbnail support (thumbnailUrl field in Link model, displayed on public profiles)
+  - [x] Profile customization UI in ProfileSettings (theme presets: Light, Dark, Ocean, Sunset, Forest)
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

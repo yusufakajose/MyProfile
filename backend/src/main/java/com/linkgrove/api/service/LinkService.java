@@ -236,12 +236,15 @@ public class LinkService {
         }
     }
 
-    @Cacheable(value = "publicProfiles", key = "#username")
-    @Transactional(readOnly = true)
+    @Transactional
     public PublicProfileResponse getPublicProfile(String username) {
         log.info("Fetching public profile from database for user: {}", username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
+
+        // Increment profile view count (removed caching to ensure accurate counts)
+        user.setProfileViewCount(user.getProfileViewCount() + 1);
+        userRepository.save(user);
 
         List<Link> activeLinks = linkRepository.findActiveLinksForPublicProfile(username).stream()
                 .filter(this::isWithinSchedule)
@@ -253,6 +256,7 @@ public class LinkService {
                         .title(link.getTitle())
                         .url(link.getUrl())
                         .description(link.getDescription())
+                        .thumbnailUrl(link.getThumbnailUrl())
                         .displayOrder(link.getDisplayOrder())
                         .build())
                 .collect(Collectors.toList());
@@ -266,6 +270,8 @@ public class LinkService {
                 .themeAccentColor(user.getThemeAccentColor())
                 .themeBackgroundColor(user.getThemeBackgroundColor())
                 .themeTextColor(user.getThemeTextColor())
+                .emailVerified(user.getEmailVerified())
+                .viewCount(user.getProfileViewCount())
                 .links(linkResponses)
                 .build();
     }

@@ -31,6 +31,9 @@ public class Link {
     @Column(length = 200)
     private String description;
 
+    @Column(length = 500)
+    private String thumbnailUrl;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isActive = true;
