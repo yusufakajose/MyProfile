@@ -67,6 +67,14 @@
   - [x] Verified badge icon for email-verified users (blue checkmark next to username)
   - [x] Link preview thumbnail support (thumbnailUrl field in Link model, displayed on public profiles)
   - [x] Profile customization UI in ProfileSettings (theme presets: Light, Dark, Ocean, Sunset, Forest)
+  - [x] Typography improvements:
+    - Standardized on Inter font family (removed Roboto)
+    - Increased base font size to 16px for better readability
+    - Added proper line-height (1.6-1.7) to body text and descriptions
+    - Implemented letter-spacing: -0.02em for large headings, 0.05em for buttons
+    - Added font-weight variations (300-900) for better hierarchy
+    - Improved contrast on gradient backgrounds
+    - Tighter line-height (1.1) for hero heading
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

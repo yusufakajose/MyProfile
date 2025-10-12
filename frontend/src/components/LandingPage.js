@@ -59,6 +59,8 @@ const LandingPage = () => {
                 fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
                 fontWeight: 800,
                 mb: 2,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -72,7 +74,14 @@ const LandingPage = () => {
             <Typography
               variant="h5"
               color="text.secondary"
-              sx={{ mb: 4, maxWidth: 600, mx: 'auto', fontWeight: 400 }}
+              sx={{ 
+                mb: 4, 
+                maxWidth: 600, 
+                mx: 'auto', 
+                fontWeight: 400,
+                lineHeight: 1.6,
+                fontSize: { xs: '1.125rem', md: '1.25rem' }
+              }}
             >
               Create a stunning link-in-bio page with powerful analytics, QR codes, and A/B testing.
             </Typography>
@@ -111,7 +120,12 @@ const LandingPage = () => {
         <Typography
           variant="h2"
           textAlign="center"
-          sx={{ fontSize: { xs: '2rem', md: '2.75rem' }, fontWeight: 700, mb: 2 }}
+          sx={{ 
+            fontSize: { xs: '2rem', md: '2.75rem' }, 
+            fontWeight: 700, 
+            mb: 2,
+            letterSpacing: '-0.01em'
+          }}
         >
           Everything you need
         </Typography>
@@ -119,7 +133,12 @@ const LandingPage = () => {
           variant="h6"
           color="text.secondary"
           textAlign="center"
-          sx={{ mb: 6, fontWeight: 400 }}
+          sx={{ 
+            mb: 6, 
+            fontWeight: 400,
+            lineHeight: 1.6,
+            fontSize: { xs: '1rem', md: '1.125rem' }
+          }}
         >
           Professional tools to grow your audience and track your success
         </Typography>
@@ -154,10 +173,10 @@ const LandingPage = () => {
                   >
                     {feature.icon}
                   </Box>
-                  <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+                  <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, letterSpacing: '-0.005em' }}>
                     {feature.title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                     {feature.description}
                   </Typography>
                 </CardContent>

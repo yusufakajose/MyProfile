@@ -251,7 +251,7 @@ const PublicProfile = () => {
             }}
           />
           <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
-            <Typography variant="h5" fontWeight={800}>
+            <Typography variant="h5" fontWeight={800} sx={{ color: text }}>
               {profile.displayName || `@${profile.username}`}
             </Typography>
             {profile.emailVerified && (
@@ -261,7 +261,7 @@ const PublicProfile = () => {
             )}
           </Box>
           {profile.bio && (
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{ color: text, opacity: 0.8, lineHeight: 1.7 }}>
               {profile.bio}
             </Typography>
           )}
