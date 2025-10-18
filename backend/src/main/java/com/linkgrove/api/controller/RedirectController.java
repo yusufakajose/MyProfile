@@ -152,6 +152,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -194,6 +195,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -232,6 +234,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("image/svg+xml"))
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -270,6 +273,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("image/svg+xml"))
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -312,6 +316,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -354,6 +359,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -392,6 +398,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("image/svg+xml"))
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")
@@ -430,6 +437,7 @@ public class RedirectController {
                     .build();
         }
         return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("image/svg+xml"))
                 .header("ETag", etag)
                 .header("Cache-Control", "public, max-age=86400, immutable")
                 .header("X-RateLimit-Limit", "60")

@@ -28,6 +28,7 @@ import AddLinkIcon from '@mui/icons-material/AddLink';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { useAuth } from '../context/AuthContext';
 import { ColorModeContext } from '../theme/ColorModeContext';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -156,6 +157,11 @@ const Header = () => {
                         <ListItemIcon sx={{ minWidth: 36 }}><AddLinkIcon fontSize="small" /></ListItemIcon>
                         <ListItemText primary="Create Link" primaryTypographyProps={{ fontWeight: 700 }} />
                       </ListItemButton>
+                      <ListItemButton component={RouterLink} to={`/u/${user?.username}`} onClick={closeDrawer} sx={{ py: 1.25 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}><AccountBoxIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText primary="View Public Profile" primaryTypographyProps={{ fontWeight: 700 }} />
+                      </ListItemButton>
+                      <Divider sx={{ my: 1 }} />
                       <ListItemButton onClick={() => { closeDrawer(); handleLogout(); }} sx={{ py: 1.25 }}>
                         <ListItemIcon sx={{ minWidth: 36 }}><LogoutIcon fontSize="small" /></ListItemIcon>
                         <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 700 }} />
@@ -202,6 +208,11 @@ const Header = () => {
                     </IconButton>
                     <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={closeUserMenu} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }} MenuListProps={{ 'aria-label': 'user menu' }}>
                       <MenuItem component={RouterLink} to="/settings/profile" onClick={closeUserMenu}>Profile</MenuItem>
+                      <MenuItem component={RouterLink} to={`/u/${user?.username}`} onClick={closeUserMenu}>
+                        <ListItemIcon sx={{ minWidth: 28 }}><AccountBoxIcon fontSize="small" /></ListItemIcon>
+                        View Public Profile
+                      </MenuItem>
+                      <Divider />
                       <MenuItem onClick={() => { closeUserMenu(); handleLogout(); }}>
                         <ListItemIcon sx={{ minWidth: 28 }}><LogoutIcon fontSize="small" /></ListItemIcon>
                         Logout

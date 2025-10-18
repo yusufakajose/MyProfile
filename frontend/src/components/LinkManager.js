@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl, Alert } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, IconButton, Stack, TextField, Typography, Switch, FormControlLabel, Tooltip, Pagination, InputAdornment, Divider, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, InputLabel, FormControl, Alert, Badge, Chip } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -11,6 +11,8 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import AddIcon from '@mui/icons-material/Add';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import client from '../api/client';
 import { isValidHttpUrl, sanitizeAlias, isValidAlias, aliasError, dateErrors } from '../utils/validation';
 
@@ -100,6 +102,11 @@ const LinkManager = () => {
 
   const redirectOrigin = useMemo(() => {
     const base = client.defaults?.baseURL || '';
+    // If baseURL is relative (e.g., '/api'), use current origin (works with proxy)
+    if (base.startsWith('/')) {
+      return window.location.origin;
+    }
+    // If baseURL is absolute, extract origin
     try {
       const parsed = new URL(base);
       return parsed.origin; // baseURL is .../api; origin gives protocol+host
@@ -138,6 +145,17 @@ const LinkManager = () => {
 
   useEffect(() => { load(1, query); setPage(1); }, [query, selectedTags, status, sort, load]);
   useEffect(() => { (async () => { try { const r = await client.get('/links/tags'); setAllTags(r.data || []); } catch {} })(); }, []);
+  useEffect(() => { 
+    links.forEach(link => {
+      if (!variantsByLink[link.id]) {
+        client.get(`/links/${link.id}/variants`).then(res => {
+          setVariantsByLink(prev => ({ ...prev, [link.id]: res.data || [] }));
+        }).catch(() => {
+          setVariantsByLink(prev => ({ ...prev, [link.id]: [] }));
+        });
+      }
+    });
+  }, [links]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -280,7 +298,10 @@ const LinkManager = () => {
     if (bg) params.set('bg', bg.replace('#', ''));
     if (logo) params.set('logo', logo);
     if (ecc) params.set('ecc', ecc);
-    return `${base}?${params.toString()}`;
+    params.set('_', Date.now().toString());
+    const url = `${base}?${params.toString()}`;
+    console.log('QR URL:', url, 'redirectOrigin:', redirectOrigin);
+    return url;
   };
 
   const openQrDialog = (link) => {
@@ -294,8 +315,10 @@ const LinkManager = () => {
     const l = qrDialog.link;
     if (!l) return;
     const url = qrUrlFor(l.id, l.alias, qrOptions);
+    console.log('Downloading QR from:', url);
     try {
       const resp = await fetch(url);
+      console.log('Download response:', resp.status, resp.statusText, 'Content-Type:', resp.headers.get('content-type'));
       if (!resp.ok) {
         const ct = resp.headers.get('content-type') || '';
         if (ct.includes('application/json')) {
@@ -303,9 +326,10 @@ const LinkManager = () => {
           const msg = j?.message || 'Download failed';
           throw new Error(msg);
         }
-        throw new Error('Download failed');
+        throw new Error(`Download failed: ${resp.status} ${resp.statusText}`);
       }
       const blob = await resp.blob();
+      console.log('Blob size:', blob.size, 'type:', blob.type);
       const a = document.createElement('a');
       const ext = qrOptions.format === 'svg' ? 'svg' : 'png';
       a.href = URL.createObjectURL(blob);
@@ -313,7 +337,9 @@ const LinkManager = () => {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      setToast({ open: true, message: 'QR code downloaded' });
     } catch (e) {
+      console.error('Download error:', e);
       setToast({ open: true, message: e?.message || 'Download failed' });
     }
   };
@@ -453,8 +479,12 @@ const LinkManager = () => {
       <Box sx={{ position: 'fixed', right: 16, bottom: 16, display: { xs: 'block', sm: 'none' }, zIndex: 1200 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => createFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} sx={{ borderRadius: 999 }}>New link</Button>
       </Box>
-      <Card sx={{ mb: 3 }} ref={createFormRef}>
+      <Card sx={{ mb: 3, borderLeft: 4, borderColor: 'primary.main' }} ref={createFormRef}>
         <CardContent>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+            <AddIcon color="primary" />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>Create New Link</Typography>
+          </Stack>
           {Object.values(formServerErrors).some(Boolean) && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {Object.entries(formServerErrors).map(([k,v]) => v ? `${k}: ${v}` : null).filter(Boolean).join(' • ')}
@@ -468,9 +498,11 @@ const LinkManager = () => {
             <TextField label="Tags (comma separated)" value={(form.tags || []).join(', ')} onChange={(e) => setForm({ ...form, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} size="small" sx={{ flex: 2 }} placeholder="news, personal" />
             <TextField type="datetime-local" label="Start at" value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} error={!!formServerErrors.startAt} helperText={formServerErrors.startAt || ' '} />
             <TextField type="datetime-local" label="End at" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} size="small" sx={{ flex: 1 }} InputLabelProps={{ shrink: true }} error={!!formServerErrors.endAt} helperText={formServerErrors.endAt || ' '} />
-            <Button type="submit" variant="contained" disabled={!canCreate || loading}>Add</Button>
+            <Button type="submit" variant="contained" disabled={!canCreate || loading} startIcon={<AddIcon />} sx={{ minWidth: 140, fontWeight: 700 }}>Create Link</Button>
           </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
+          <Divider sx={{ my: 3 }} />
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Filter & Search</Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               size="small"
               placeholder="Search title/url/description"
@@ -520,6 +552,12 @@ const LinkManager = () => {
         </CardContent>
       </Card>
 
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          My Links {links.length > 0 && `(${links.length})`}
+        </Typography>
+      </Box>
+
       <Grid container spacing={2}>
         {links.length === 0 && (
           <Grid item xs={12}>
@@ -546,8 +584,25 @@ const LinkManager = () => {
             onDragOver={handleDragOver}
             onDrop={() => handleDrop(idx)}
           >
-            <Card sx={{ cursor: 'grab' }} data-testid="link-card" data-link-id={l.id}>
+            <Card sx={{ cursor: 'grab', '&:hover .drag-handle': { opacity: 1 } }} data-testid="link-card" data-link-id={l.id}>
               <CardContent>
+                <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                  <Tooltip title="Drag to reorder" placement="top">
+                    <DragIndicatorIcon 
+                      className="drag-handle"
+                      sx={{ 
+                        color: 'text.secondary', 
+                        cursor: 'grab',
+                        opacity: 0.5,
+                        transition: 'opacity 0.2s',
+                        '&:hover': { opacity: 1, color: 'primary.main' }
+                      }} 
+                    />
+                  </Tooltip>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 2.5 }}>
+                    Drag to reorder
+                  </Typography>
+                </Stack>
                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
                       <Box sx={{ flex: 1, pr: 1, minWidth: 0 }}>
                     {editing === l.id ? (
@@ -681,9 +736,30 @@ const LinkManager = () => {
                 </CardContent>
               )}
               <CardContent sx={{ pt: 0 }}>
-                <Button size="small" variant="text" onClick={() => toggleVariants(l.id)}>
-                  {variantsOpenFor === l.id ? 'Hide Variants' : 'Manage Variants'}
-                </Button>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  <Button 
+                    size="small" 
+                    variant={variantsOpenFor === l.id ? 'text' : 'outlined'} 
+                    onClick={() => toggleVariants(l.id)}
+                    startIcon={<CallSplitIcon />}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {variantsOpenFor === l.id ? 'Hide Variants' : 'A/B Testing'}
+                    {variantsByLink[l.id] && variantsByLink[l.id].length > 0 && (
+                      <Chip 
+                        label={variantsByLink[l.id].length} 
+                        size="small" 
+                        color="primary" 
+                        sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} 
+                      />
+                    )}
+                  </Button>
+                  {variantsOpenFor !== l.id && variantsByLink[l.id] !== undefined && variantsByLink[l.id].length === 0 && (
+                    <Typography variant="caption" color="text.secondary">
+                      Split traffic between different URLs
+                    </Typography>
+                  )}
+                </Stack>
               </CardContent>
             </Card>
           </Grid>
@@ -746,9 +822,9 @@ const LinkManager = () => {
                 <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)}</Typography>
                 <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
                   {qrOptions.format === 'svg' ? (
-                    <Box component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} sx={{ maxWidth: '100%', height: 'auto' }} />
+                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ maxWidth: '100%', height: 'auto' }} />
                   ) : (
-                    <Box component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} sx={{ imageRendering: 'pixelated' }} />
+                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ imageRendering: 'pixelated' }} />
                   )}
                 </Box>
               </Box>

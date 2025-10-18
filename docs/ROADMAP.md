@@ -75,6 +75,12 @@
     - Added font-weight variations (300-900) for better hierarchy
     - Improved contrast on gradient backgrounds
     - Tighter line-height (1.1) for hero heading
+  - [x] October 2025 UX Improvements:
+    - Fixed QR code preview and download with PNG Medium error correction (added explicit Content-Type headers, cache-busting timestamps)
+    - Added "View Public Profile" link in user menu (desktop and mobile navigation)
+    - Enhanced link creation form visual hierarchy (prominent heading, blue accent border, improved CTA button)
+    - Made A/B testing variants feature more discoverable (outlined button with icon, variant count badges, explanatory text)
+    - Preload variant counts for all links to show A/B test status without clicking
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

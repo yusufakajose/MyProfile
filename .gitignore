@@ -43,3 +43,4 @@ test-app/target/
 *.swo
 *.orig
 
+.cursor/
