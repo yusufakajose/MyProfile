@@ -60,6 +60,7 @@ const LinkManager = () => {
   const [editServerErrors, setEditServerErrors] = useState({});
   const [qrDialog, setQrDialog] = useState({ open: false, link: null });
   const [qrOptions, setQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
+  const [debouncedQrOptions, setDebouncedQrOptions] = useState({ format: 'png', size: 256, margin: 1, utm: true, fg: '#000000', bg: '#ffffff', logo: '', ecc: 'M' });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, link: null });
   const createFormRef = useRef(null);
   const CONTRAST_THRESHOLD = 2.5; // match server
@@ -156,6 +157,14 @@ const LinkManager = () => {
       }
     });
   }, [links]);
+
+  // Debounce QR options to prevent rapid-fire preview requests
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQrOptions(qrOptions);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [qrOptions]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -831,12 +840,12 @@ const LinkManager = () => {
             {qrDialog.link && (
               <Box>
                 <Typography variant="caption" color="text.secondary">Preview URL:</Typography>
-                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)}</Typography>
+                <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>{qrUrlFor(qrDialog.link.id, qrDialog.link.alias, debouncedQrOptions)}</Typography>
                 <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
-                  {qrOptions.format === 'svg' ? (
-                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ maxWidth: '100%', height: 'auto' }} />
+                  {debouncedQrOptions.format === 'svg' ? (
+                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, debouncedQrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, debouncedQrOptions)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ maxWidth: '100%', height: 'auto' }} />
                   ) : (
-                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, qrOptions)} width={Math.min(300, qrOptions.size)} height={Math.min(300, qrOptions.size)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ imageRendering: 'pixelated' }} />
+                    <Box key={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, debouncedQrOptions)} component="img" alt="QR preview" src={qrUrlFor(qrDialog.link.id, qrDialog.link.alias, debouncedQrOptions)} width={Math.min(300, debouncedQrOptions.size)} height={Math.min(300, debouncedQrOptions.size)} onError={(e) => { console.error('QR image load error:', e.target.src); setToast({ open: true, message: 'Failed to load QR preview' }); }} sx={{ imageRendering: 'pixelated' }} />
                   )}
                 </Box>
               </Box>
