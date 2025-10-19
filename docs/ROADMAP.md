@@ -81,6 +81,7 @@
     - Enhanced link creation form visual hierarchy (prominent heading, blue accent border, improved CTA button)
     - Made A/B testing variants feature more discoverable (outlined button with icon, variant count badges, explanatory text)
     - Preload variant counts for all links to show A/B test status without clicking
+    - Added live color preview swatches for QR dialog FG/BG color pickers (32px color boxes with hex values)
 - [ ] Admin view (rate-limit metrics, webhook failures, geo status)
 
 ## Data & Migrations

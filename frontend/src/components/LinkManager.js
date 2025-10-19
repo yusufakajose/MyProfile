@@ -807,8 +807,20 @@ const LinkManager = () => {
             <TextField size="small" type="number" label="Margin" value={qrOptions.margin} onChange={(e) => setQrOptions((o) => ({ ...o, margin: Math.max(0, Math.min(4, parseInt(e.target.value || '0', 10))) }))} />
             <FormControlLabel control={<Switch size="small" checked={!!qrOptions.utm} onChange={(e) => setQrOptions((o) => ({ ...o, utm: e.target.checked }))} />} label="Append UTM (qr/linkgrove)" />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField size="small" type="color" label="FG" value={qrOptions.fg} onChange={(e) => setQrOptions((o) => ({ ...o, fg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
-              <TextField size="small" type="color" label="BG" value={qrOptions.bg} onChange={(e) => setQrOptions((o) => ({ ...o, bg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
+              <Stack spacing={0.5} sx={{ flex: 1 }}>
+                <TextField size="small" type="color" label="FG" value={qrOptions.fg} onChange={(e) => setQrOptions((o) => ({ ...o, fg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Box sx={{ width: 32, height: 32, backgroundColor: qrOptions.fg, border: '1px solid', borderColor: 'divider', borderRadius: 1 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{qrOptions.fg.toUpperCase()}</Typography>
+                </Stack>
+              </Stack>
+              <Stack spacing={0.5} sx={{ flex: 1 }}>
+                <TextField size="small" type="color" label="BG" value={qrOptions.bg} onChange={(e) => setQrOptions((o) => ({ ...o, bg: e.target.value }))} sx={{ width: 160 }} InputLabelProps={{ shrink: true }} />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Box sx={{ width: 32, height: 32, backgroundColor: qrOptions.bg, border: '1px solid', borderColor: 'divider', borderRadius: 1 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{qrOptions.bg.toUpperCase()}</Typography>
+                </Stack>
+              </Stack>
             </Stack>
             <TextField size="small" label="Logo URL (PNG/JPG)" value={qrOptions.logo} onChange={(e) => setQrOptions((o) => ({ ...o, logo: e.target.value }))} placeholder="https://.../logo.png" error={!logoValid} helperText={!logoValid ? 'Use https and .png/.jpg/.jpeg' : ' '} />
             <Box>
